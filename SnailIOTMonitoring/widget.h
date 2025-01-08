@@ -19,6 +19,12 @@ class Widget : public QWidget
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+
+    enum ResizeDirection {
+        None,
+        BottomRight
+    };
+
     void loadTrayIcon();
     bool eventFilter(QObject *watched, QEvent *event) override;
 
@@ -31,9 +37,11 @@ private:
     statusBar *m_statusBar;
     centerWidget *m_centerWidget;
     QSystemTrayIcon *trayIcon;
+    ResizeDirection resizeDirection;
 
     QPoint m_point;
     bool isPressed;
+    bool isFullScreen;
 };
 
 #endif // WIDGET_H
