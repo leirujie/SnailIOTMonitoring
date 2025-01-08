@@ -22,5 +22,4 @@ void statusBar::onSendMessageByStatusBar(QString msg)
 {
     ui->labelStatus->setText(msg);
     m_timer->start(2000);
-    // 和 m_timer->setInterval(2000);m_timer->start(); 效果一样
 }

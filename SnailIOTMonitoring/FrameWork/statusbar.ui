@@ -57,7 +57,7 @@
         <string notr="true"/>
        </property>
        <property name="text">
-        <string>Welcome!</string>
+        <string/>
        </property>
       </widget>
      </item>
