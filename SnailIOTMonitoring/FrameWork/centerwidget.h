@@ -6,27 +6,22 @@
 #include "userManager/launchscrren.h"
 #include "userManager/loginpage.h"
 #include "userManager/registerpage.h"
+#include "userManager/usermenu.h"
+#include "userManager/adminmenu.h"
 
 class LaunchScrren;
 class LoginPage;
 class RegisterPage;
+class UserMenu;
+class AdminMenu;
 
 // 定义页面索引枚举
 enum PageIndex {
     LAUNCH_SCREEN_PAGE = 0, // 启动页面
     ACCOUNT_PWD_LOGIN_PAGE = 1, // 登录界面
     REGISTER_PAGE = 2, // 注册页面
-    DEVICE_ADD_PAGE = 3, // 设备添加页面
-    DEVICE_DEL_PAGE = 4, // 设备删除页面
-    DEVICE_EDIT_PAGE = 5, // 设备编辑页面
-    DEVICE_GROUP_PAGE = 6, // 设备分组页面
-    DEVICE_ADD_GROUP_PAGE = 7, // 设备添加分组页面
-    DEVICE_DEL_GROUP_PAGE = 8, // 设备删除分组页面
-    DEVICE_EDIT_GROUP_PAGE = 9, // 设备编辑分组页面
-    DEVICE_DATA_PAGE = 10, // 设备数据页面
-    DEVICE_DATA_HISTORY_PAGE = 11, // 设备数据历史页面
-    DEVICE_ALARM_PAGE = 12, // 设备告警页面
-    LOG_PAGE = 13, // 日志页面
+    Menu_User_PAGE = 3, //用户菜单
+    Menu_ADMIN_PAGE = 4, //管理员菜单
 };
 
 namespace Ui {
@@ -53,6 +48,8 @@ private:
     LaunchScrren *launchscrren;//启动页
     LoginPage *loginPage;      //登录页
     RegisterPage *registerPage;//注册页
+    AdminMenu *adminMenu;  //管理员菜单
+    UserMenu *userMenu;    //用户菜单
 };
 
 #endif // CENTERWIDGET_H

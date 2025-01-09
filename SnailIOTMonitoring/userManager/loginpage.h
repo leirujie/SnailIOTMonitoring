@@ -7,6 +7,10 @@
 #include <FrameWork/centerwidget.h>
 #include "UserDatabase.h"
 #include <QFile>
+#include "usermenu.h"
+#include "adminmenu.h"
+#include "global.h"
+
 namespace Ui {
 class LoginPage;
 }
@@ -24,8 +28,7 @@ signals:
 
 public slots:
     void loginClicked();
-    void extiClicked();
-    void accountClicked();
+    void clearInputLogin();  // 清空输入框
 
 private:
     Ui::LoginPage *ui;
