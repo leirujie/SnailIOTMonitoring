@@ -4,5 +4,6 @@
         <file>image/max.png</file>
         <file>image/min.png</file>
         <file>image/woniu.png</file>
+        <file>image/load.png</file>
     </qresource>
 </RCC>

@@ -1,4 +1,5 @@
 #include "devicedialog.h"
+#include "admindevicemanager.h"
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -9,13 +10,9 @@ DeviceDialog::DeviceDialog(QWidget *parent) : QDialog(parent)
 
     nameEdit = new QLineEdit(this);
     typeComboBox = new QComboBox(this);
-    typeComboBox->addItem("温度检测器");
-    typeComboBox->addItem("湿度检测器");
-    typeComboBox->addItem("光照检测器");
 
     locationComboBox = new QComboBox(this);
-    locationComboBox->addItem("办公室");
-    locationComboBox->addItem("厂房");
+
     manufacturerEdit = new QLineEdit(this);
     modelEdit = new QLineEdit(this);
     installDateEdit = new QDateEdit(this);
@@ -46,6 +43,36 @@ DeviceDialog::DeviceDialog(QWidget *parent) : QDialog(parent)
 
     setLayout(mainLayout);
     resize(400, 300);
+    // 调用加载分组数据的方法
+    loadGroupData();
+}
+
+void DeviceDialog::loadGroupData()
+{
+//    if (parentWidget) {
+//        // 调用父窗口的方法来加载分组数据
+//        parentWidget->loadGroups();  // 这里你可以选择直接调用 loadGroups()，如果不需要返回数据
+//    }
+    // 清空现有的选项，防止重复添加
+       typeComboBox->clear();
+       locationComboBox->clear();
+
+       // 重新加载 `groups` 表中的数据到 typeComboBox 中
+       QSqlQuery query;
+       query.exec("SELECT name FROM groups WHERE type = '设备类型'");  // 查询所有设备类型分组
+
+       // 将查询到的分组名称添加到 ComboBox 中
+       while (query.next()) {
+           QString groupName = query.value(0).toString();
+           typeComboBox->addItem(groupName);  // 添加新的分组项
+       }
+
+       // 加载设备位置分组到 locationComboBox
+           query.exec("SELECT name FROM groups WHERE type = '设备位置'");  // 查询所有设备位置分组
+           while (query.next()) {
+               QString groupName = query.value(0).toString();
+               locationComboBox->addItem(groupName);  // 将设备位置分组添加到 locationComboBox
+           }
 }
 
 void DeviceDialog::setDeviceInfo(const QList<QString> &deviceInfo)
@@ -54,9 +81,7 @@ void DeviceDialog::setDeviceInfo(const QList<QString> &deviceInfo)
         return;
 
     nameEdit->setText(deviceInfo[0]);
-    //typeEdit->setText(deviceInfo[1]);
       typeComboBox->setCurrentText(deviceInfo[1]); // 设置下拉框的选中项
-    //locationEdit->setText(deviceInfo[2]);
        locationComboBox->setCurrentText(deviceInfo[2]); // 设置设备位置
     manufacturerEdit->setText(deviceInfo[3]);
     modelEdit->setText(deviceInfo[4]);
@@ -67,9 +92,9 @@ QList<QString> DeviceDialog::getDeviceInfo() const
 {
     return {
         nameEdit->text(),
-       // typeEdit->text(),
+
        typeComboBox->currentText(),
-        //locationEdit->text(),
+
          locationComboBox->currentText(), // 获取选择的设备位置
         manufacturerEdit->text(),
         modelEdit->text(),

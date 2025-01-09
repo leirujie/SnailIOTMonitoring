@@ -9,6 +9,9 @@
 #include <QPushButton>
 #include <QComboBox>
 
+// 前向声明 Widget 类
+class AdminDeviceManager;
+
 class DeviceDialog : public QDialog
 {
     Q_OBJECT
@@ -17,6 +20,7 @@ public:
     void setDeviceInfo(const QList<QString> &deviceInfo); // 设置已有设备信息
     QList<QString> getDeviceInfo() const;   // 获取设备信息
     void onSave();
+    void loadGroupData();
 private:
     QLineEdit *nameEdit;
     QLineEdit *typeEdit;
@@ -30,6 +34,7 @@ private:
     QComboBox *typeComboBox;
     QComboBox *locationComboBox;
     int id;
+    AdminDeviceManager *parentWidget;// 父窗口指针
 };
 
 #endif // DEVICEDIALOG_H

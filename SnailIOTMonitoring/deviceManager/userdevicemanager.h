@@ -2,6 +2,8 @@
 #define USERDEVICEMANAGER_H
 
 #include <QWidget>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 
 namespace Ui {
 class UserDeviceManager;
@@ -16,11 +18,13 @@ public:
     ~UserDeviceManager();
     // 用于加载设备信息
     void loadDevices(const QString &typeFilter = "", const QString &locationFilter = "");
+    void loadFilters();  // 加载过滤条件
 public slots:
     // 筛选设备
     void onFilterDevices();
 private:
     Ui::UserDeviceManager *ui;
+    QSqlDatabase db; // 数据库连接
 };
 
 #endif // USERDEVICEMANAGER_H

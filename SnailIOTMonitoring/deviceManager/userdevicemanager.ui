@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,10,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,60,0">
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
