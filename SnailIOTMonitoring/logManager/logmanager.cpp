@@ -13,7 +13,7 @@ LogManager::LogManager(QObject *parent)
 
     // 创建数据库连接
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("log.db");
+    db.setDatabaseName("SnailIOTMonitor.db");
 
     if (!db.open()) {
         qDebug() << "Cannot open database:" << db.lastError();
