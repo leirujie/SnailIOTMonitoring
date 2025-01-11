@@ -23,12 +23,6 @@ private slots:
 private:
     Ui::adminUpdateUserInfoDialog *ui;
     UserDatabase *db;  // 数据库操作对象
-
-    QString username() const;
-    QString password() const;
-    QString email() const;
-    QString phone() const;
-    QString role() const;
 };
 
 #endif // ADMINUPDATEUSERINFODIALOG_H

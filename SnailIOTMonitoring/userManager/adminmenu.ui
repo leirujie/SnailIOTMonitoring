@@ -14,27 +14,10 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_6">
-   <item row="0" column="0">
-    <widget class="QLabel" name="labelAdminMenu">
-     <property name="font">
-      <font>
-       <pointsize>14</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>管理员菜单</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="1">
     <widget class="QStackedWidget" name="widgetAdminMenu">
      <property name="currentIndex">
-      <number>2</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="pageUserManager">
       <layout class="QGridLayout" name="gridLayout">
@@ -64,13 +47,6 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="btn_save">
-             <property name="text">
-              <string>保存</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QPushButton" name="btn_refresh">
              <property name="text">
               <string>刷新</string>
@@ -91,36 +67,7 @@
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="layoutUserManager">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <item>
-            <widget class="QPushButton" name="btnAdminCatDeviceData_2">
-             <property name="text">
-              <string>添加设备</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="text">
-              <string>修改设备状态</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_3">
-             <property name="text">
-              <string>删除设备</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_4">
-             <property name="text">
-              <string>查看设备信息</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QHBoxLayout" name="horizontalLayout"/>
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidgetDeviceManager"/>
@@ -134,36 +81,7 @@
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="layoutUserManager_3">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QPushButton" name="pushButton_9">
-             <property name="text">
-              <string>查看数据</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_10">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_11">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_12">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QHBoxLayout" name="horizontalLayout_3"/>
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidgetDataManager"/>
@@ -177,36 +95,7 @@
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="layoutUserManager_4">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <widget class="QPushButton" name="pushButton_13">
-             <property name="text">
-              <string>查看个人日志</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_14">
-             <property name="text">
-              <string>查看所有日志</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_15">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_16">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QHBoxLayout" name="horizontalLayout_4"/>
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidgetLogManager"/>
@@ -220,44 +109,29 @@
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="layoutUserManager_5">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QPushButton" name="pushButton_17">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_18">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_19">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_20">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
           <widget class="QTableWidget" name="tableWidgetWarningManager"/>
          </item>
         </layout>
        </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="labelAdminMenu">
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>管理员菜单</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
     </widget>
    </item>
    <item row="1" column="0">

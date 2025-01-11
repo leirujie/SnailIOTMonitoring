@@ -48,30 +48,17 @@ void centerWidget::onSwitchPage(int targetPageIndex)
         break;
     case Menu_User_PAGE:
         m_QStackedLayout->setCurrentWidget(userMenu);  // 用户菜单
+        userMenu->getUserMenuStackedWidget()->setCurrentIndex(PAGE_USER_DEVICE_DATA);
         break;
     case Menu_ADMIN_PAGE:
-        m_QStackedLayout->setCurrentWidget(adminMenu);  // 管理员菜单
-        break;
+           m_QStackedLayout->setCurrentWidget(adminMenu);
+           // 设置 AdminMenu 的默认页面为设备管理页面（索引1）
+           adminMenu->getAdminMenuStackedWidget()->setCurrentIndex(PAGE_DEVICE_MANAGER);
+           break;
     default:
         break;
     }
 
-    // 在管理员菜单中，根据按钮的点击切换具体页面
-    if (targetPageIndex == Menu_ADMIN_PAGE) {
-        //获取 AdminMenu 的 QStackedWidget 对象
-        QStackedWidget *adminMenuStackedWidget = adminMenu->getAdminMenuStackedWidget();
-        if (adminMenuStackedWidget) {
-            adminMenuStackedWidget->setCurrentIndex(targetPageIndex - Menu_ADMIN_PAGE);
-        }
-    }
-    // 在用户菜单中，根据按钮的点击切换具体页面
-    if (targetPageIndex == Menu_User_PAGE) {
-        // 获取UserMenu 的 QStackedWidget 对象
-        QStackedWidget *userMenuStackedWidget = userMenu->getUserMenuStackedWidget();
-        if (userMenuStackedWidget) {
-            userMenuStackedWidget->setCurrentIndex(targetPageIndex - Menu_User_PAGE);
-        }
-    }
     if (targetPageIndex == ACCOUNT_PWD_LOGIN_PAGE) {
         loginPage->clearInputLogin();
     }

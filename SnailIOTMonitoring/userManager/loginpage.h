@@ -22,13 +22,16 @@ class LoginPage : public QWidget
 public:
     explicit LoginPage(QWidget *parent = nullptr);
     ~LoginPage();
+    void handleLoginFailure();
 
 signals:
     void switchPage(int targetPageIndex);  // 传递目标页面索引
 
+
 public slots:
     void loginClicked();
     void clearInputLogin();  // 清空输入框
+    void togglePasswordVisibility(int state);//切换密码显示模式
 
 private:
     Ui::LoginPage *ui;

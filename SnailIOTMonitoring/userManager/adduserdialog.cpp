@@ -3,58 +3,58 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QCryptographicHash>
+#include "validator.h"
 
-AddUserDialog::AddUserDialog(QDialog *parent) :
+AddUserDialog::AddUserDialog(QWidget  *parent):
     QDialog(parent),
     ui(new Ui::AddUserDialog)
 {
     ui->setupUi(this);
     // 获取UserDatabase单例实例
-    db = UserDatabase::getInstance(parent);
+    db = UserDatabase::getInstance();
     // 设置角色选择框的选项
     ui->roleComboBox->addItem("user");
     ui->roleComboBox->addItem("admin");
 
-    connect(ui->addButton, &QPushButton::clicked, this, &AddUserDialog::on_addButton_clicked);
+    connect(ui->addButton, &QPushButton::clicked, this, &AddUserDialog::on_addButtonClicked);
 }
+void AddUserDialog::on_addButtonClicked()
+{
+    // 添加调试信息以确认槽函数被调用的次数
+    qDebug() << "AddUserDialog::on_addButton_clicked() called";
 
-QString AddUserDialog::username() const
-{
-    return ui->usernameEdit->text();  // 获取用户名
-}
+    // 禁用添加按钮，防止多次点击
+    ui->addButton->setEnabled(false);
 
-QString AddUserDialog::password() const
-{
-    return ui->passwordEdit->text();  // 获取密码
-}
-
-QString AddUserDialog::email() const
-{
-    return ui->emailEdit->text();  // 获取邮箱
-}
-
-QString AddUserDialog::phone() const
-{
-    return ui->phoneEdit->text();  // 获取电话
-}
-
-QString AddUserDialog::role() const
-{
-    return ui->roleComboBox->currentText();  // 获取角色
-}
-void AddUserDialog::on_addButton_clicked()
-{
     // 获取用户输入的值
-    QString username = this->username();
-    QString password = this->password();
-    QString email = this->email();
-    QString phone = this->phone();
-    QString role = this->role();
-    qDebug() << "Username entered: " << username;
+    QString username = ui->usernameEdit->text().trimmed();
+    QString password = ui->passwordEdit->text();
+    QString email = ui->emailEdit->text().trimmed();
+    QString phone = ui->phoneEdit->text().trimmed();
+    QString role = ui->roleComboBox->currentText();
 
-    // 数据验证
-    if (username.isEmpty() || password.isEmpty()) {
-        QMessageBox::warning(this, "错误", "用户名和密码不能为空！");
+    // 进行格式验证
+    if (!Validator::isValidUsername(username)) {
+        QMessageBox::warning(this, "错误", "用户名必须为4-20位的字母和数字组合！");
+        ui->addButton->setEnabled(true); // 重新启用按钮
+        return;
+    }
+
+    if (!Validator::isValidPassword(password)) {
+        QMessageBox::warning(this, "错误", "密码至少包含8位的字母和数字！");
+        ui->addButton->setEnabled(true); // 重新启用按钮
+        return;
+    }
+
+    if (!Validator::isValidEmail(email)) {
+        QMessageBox::warning(this, "错误", "无效的邮箱格式！");
+        ui->addButton->setEnabled(true); // 重新启用按钮
+        return;
+    }
+
+    if (!Validator::isValidPhone(phone)) {
+        QMessageBox::warning(this, "错误", "无效的手机号格式！");
+        ui->addButton->setEnabled(true); // 重新启用按钮
         return;
     }
 
@@ -62,16 +62,49 @@ void AddUserDialog::on_addButton_clicked()
     QByteArray passwordHash = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex();
     QString encryptedPassword = QString(passwordHash);
 
-    QString defaultNickname = "默认昵称";
-    // 调用数据库接口保存用户信息，传递加密后的密码
-    db->saveUserInfo(username, encryptedPassword, email, phone, defaultNickname, role);
+    QString defaultNickname = "userNickname";
 
-    QMessageBox::information(this, "成功", "用户添加成功！");
+    // 分别检查用户名、电话和邮箱是否存在
+    bool usernameExists = db->checkUsernameExists(username);
+    bool phoneExists = db->checkPhoneExists(phone);
+    bool emailExists = db->checkEmailExists(email);
 
-    accept();  // 关闭对话框
+    if (usernameExists || phoneExists || emailExists) {
+        QString errorMsg;
+        if (usernameExists) {
+            errorMsg += "该用户名已存在，请更换用户名重新添加！\n";
+        }
+        if (phoneExists) {
+            errorMsg += "该手机号已被注册，请更换手机号重新添加！\n";
+        }
+        if (emailExists) {
+            errorMsg += "该邮箱已被注册，请更换邮箱重新添加！\n";
+        }
+        QMessageBox::warning(this, "错误", errorMsg.trimmed());
+        ui->addButton->setEnabled(true); // 重新启用按钮
+        return;
+    }
+
+    // 调用数据库接口保存用户信息，传递加密后的密码，并根据返回值判断是否保存成功
+    bool saveSuccess = db->saveUserInfo(username, encryptedPassword, email, phone, defaultNickname, role);
+    if (saveSuccess) {
+        QMessageBox::information(this, "成功", "用户添加成功！");
+        accept();  // 关闭对话框
+    } else {
+        // 如果保存失败
+        QMap<QString, QString> testQuery = db->queryUserInfo(username);
+        if (testQuery.empty()) {
+            QMessageBox::warning(this, "错误", "数据库连接可能出现问题，无法添加用户，请稍后重试！");
+            qDebug() << "可能数据库连接异常，添加用户失败";
+        } else {
+            QMessageBox::warning(this, "错误", "用户添加失败，请稍后重试！");
+        }
+        ui->addButton->setEnabled(true); // 重新启用按钮
+    }
 }
 
 AddUserDialog::~AddUserDialog()
 {
     delete ui;
 }
+

@@ -22,6 +22,8 @@ enum PageIndex {
     REGISTER_PAGE = 2, // 注册页面
     Menu_User_PAGE = 3, //用户菜单
     Menu_ADMIN_PAGE = 4, //管理员菜单
+    PAGE_USER_DEVICE_DATA = 5,
+    PAGE_USER_DEVICE_INFO = 6
 };
 
 namespace Ui {

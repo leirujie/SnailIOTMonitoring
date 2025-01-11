@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>添加用户</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2" rowstretch="10,3" rowminimumheight="0,0">
    <item row="0" column="0">

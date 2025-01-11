@@ -16,10 +16,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 include ($$PWD/FrameWork/FrameWork.pri)
-#include ($$PWD/alertManager/alertManager.pri)
-#include ($$PWD/dataAnalysis/dataAnalysis.pri)
+include ($$PWD/alertManager/alertManager.pri)
 include ($$PWD/dataMonitor/dataMonitor.pri)
-#include ($$PWD/dbManager/dbManager.pri)
 include ($$PWD/deviceManager/deviceManager.pri)
 include ($$PWD/logManager/logManager.pri)
 include ($$PWD/userManager/userManager.pri)

@@ -16,7 +16,7 @@ HistoryTimeData::HistoryTimeData(QWidget *parent) :
     connect(ui->exportCSVButton, &QPushButton::clicked, this, &HistoryTimeData::exportCSV);
 
     db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("C:/Users/Admin/Desktop/模拟数据/sensor_data.db");
+    db.setDatabaseName("C:/Users/Admin/Desktop/sensor_data.db");
 
     if (!db.open()) {
         QMessageBox::critical(this, "数据库错误", db.lastError().text());

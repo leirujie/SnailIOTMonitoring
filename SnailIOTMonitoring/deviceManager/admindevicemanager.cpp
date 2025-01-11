@@ -22,7 +22,7 @@ AdminDeviceManager::AdminDeviceManager(QWidget *parent) :
 
        // 初始化数据库连接
                db = QSqlDatabase::addDatabase("QSQLITE");
-               db.setDatabaseName("SnailIOTMonitoring.db");
+               db.setDatabaseName("SnailIOTMonitor.db");
 
                if (!db.open())
                {
@@ -45,6 +45,14 @@ AdminDeviceManager::AdminDeviceManager(QWidget *parent) :
                                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                                          "name TEXT UNIQUE, "
                                          "type TEXT );");
+
+               // 插入设备类型和设备位置的分组信息
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('温度检测器', '设备类型');");
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('湿度检测器', '设备类型');");
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('光照检测器', '设备类型');");
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('南京', '设备位置');");
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('上海', '设备位置');");
+                          query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('北京', '设备位置');");
 
                // 加载分组数据
                    loadGroups();
@@ -121,15 +129,17 @@ void AdminDeviceManager::onAddDevice()
     }
 }
 
-
+// 判断字符串中是否包含非法字符
 bool AdminDeviceManager::containsIllegalCharacters(const QString &str)
 {
-    // 允许字母、数字、中文字符
-       QRegularExpression re("[A-Za-z0-9\u4e00-\u9fa5]+");
+    // 允许字母、数字、中文字符和连字符（-）
+    QRegularExpression re("^[A-Za-z0-9\u4e00-\u9fa5-]+$");
 
-       // 如果字符串不符合规定的字符集，说明包含非法字符
-       return !str.contains(re);
+    // 如果字符串不符合规定的字符集，说明包含非法字符
+    return !str.contains(re);
 }
+
+// 校验设备信息是否合法
 bool AdminDeviceManager::isDeviceInfoValid(const QList<QString> &deviceInfo)
 {
     // 检查设备名称是否合法
@@ -141,33 +151,35 @@ bool AdminDeviceManager::isDeviceInfoValid(const QList<QString> &deviceInfo)
         QMessageBox::warning(this, "设备信息错误", "设备名称包含非法字符！");
         return false;
     }
+
     // 获取所有设备类型分组
-       QSqlQuery typeQuery;
-       typeQuery.exec("SELECT name FROM groups WHERE type = '设备类型'");
-       QStringList validTypes;
-       while (typeQuery.next()) {
-           validTypes.append(typeQuery.value(0).toString());  // 将有效的设备类型添加到 validTypes 中
-       }
+    QSqlQuery typeQuery;
+    typeQuery.exec("SELECT name FROM groups WHERE type = '设备类型'");
+    QStringList validTypes;
+    while (typeQuery.next()) {
+        validTypes.append(typeQuery.value(0).toString());  // 将有效的设备类型添加到 validTypes 中
+    }
 
-       // 检查设备类型是否合法
-       if (deviceInfo[1].isEmpty() || !validTypes.contains(deviceInfo[1])) {
-           QMessageBox::warning(this, "设备信息错误", "设备类型不能为空且必须是合法的类型！");
-           return false;
-       }
+    // 检查设备类型是否合法
+    if (deviceInfo[1].isEmpty() || !validTypes.contains(deviceInfo[1])) {
+        QMessageBox::warning(this, "设备信息错误", "设备类型不能为空且必须是合法的类型！");
+        return false;
+    }
 
-       // 获取所有设备位置分组
-       QSqlQuery locationQuery;
-       locationQuery.exec("SELECT name FROM groups WHERE type = '设备位置'");
-       QStringList validLocations;
-       while (locationQuery.next()) {
-           validLocations.append(locationQuery.value(0).toString());  // 将有效的设备位置添加到 validLocations 中
-       }
+    // 获取所有设备位置分组
+    QSqlQuery locationQuery;
+    locationQuery.exec("SELECT name FROM groups WHERE type = '设备位置'");
+    QStringList validLocations;
+    while (locationQuery.next()) {
+        validLocations.append(locationQuery.value(0).toString());  // 将有效的设备位置添加到 validLocations 中
+    }
 
-       // 检查设备位置是否合法
-       if (deviceInfo[2].isEmpty() || !validLocations.contains(deviceInfo[2])) {
-           QMessageBox::warning(this, "设备信息错误", "设备位置必须是合法的设备位置！");
-           return false;
-       }
+    // 检查设备位置是否合法
+    if (deviceInfo[2].isEmpty() || !validLocations.contains(deviceInfo[2])) {
+        QMessageBox::warning(this, "设备信息错误", "设备位置必须是合法的设备位置！");
+        return false;
+    }
+
     // 检查制造商字段（如果存在）是否合法
     if (!deviceInfo[3].isEmpty() && containsIllegalCharacters(deviceInfo[3])) {
         QMessageBox::warning(this, "设备信息错误", "制造商包含非法字符！");

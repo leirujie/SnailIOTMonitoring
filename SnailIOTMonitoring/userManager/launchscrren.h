@@ -19,10 +19,6 @@ signals:
     void switchPage(int targetPageIndex);  // 传递目标页面索引
     void sendMsg(const QString);
 
-public slots:
-    void onChooseloginClicked();
-    void onChooseRegistClicked();
-
 private:
     Ui::LaunchScrren *ui;
 };

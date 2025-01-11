@@ -27,7 +27,7 @@ Widget::Widget(QWidget *parent) :
     resizeDirection = None;
     this->installEventFilter(this);
 
-    this->resize(750,500);
+    this->resize(750,650);
 
     connect(m_centerWidget,&centerWidget::sendMessageByCenter,m_statusBar,&statusBar::onSendMessageByStatusBar);
 }

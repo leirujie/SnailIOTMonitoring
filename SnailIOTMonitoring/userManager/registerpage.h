@@ -18,14 +18,7 @@ public:
     explicit RegisterPage(QWidget *parent = nullptr);
     ~RegisterPage();
 
-    // 验证用户名格式是否合法的函数声明
-    bool isValidUsername(const QString &username);
-    // 验证密码格式是否合法的函数声明
-    bool isValidPassword(const QString &password);
-    // 验证邮箱格式是否合法的函数声明
-    bool isValidEmail(const QString &email);
-    // 验证手机号码格式是否合法的函数声明
-    bool isValidPhone(const QString &phone);
+
     void clearInputRegister();  // 清空输入框
 
 signals:

@@ -4,18 +4,24 @@
 #include <QDebug>
 #include <QRegularExpression>
 #include <QMessageBox>
+#include "validator.h"
+#include "QCryptographicHash"
 
 // 静态成员变量，用于保存单例实例指针
-UserDatabase* UserDatabase::getInstance(QWidget *parent)
+UserDatabase* UserDatabase::getInstance()
 {
-    static UserDatabase instance(parent);
+    static UserDatabase instance;
     return &instance;
 }
 
 UserDatabase::UserDatabase(QWidget *parent) : QWidget(parent)
 {
-    openDatabase();
-    createTableIfNotExists();
+    if (!openDatabase()) {
+        QMessageBox::critical(this, "数据库错误", "无法打开数据库连接！");
+        return;
+    }
+    createTableIfNotExists();//创建表
+    ensureInitialAdmin();//添加一个默认管理员账号
 }
 
 UserDatabase::~UserDatabase()
@@ -59,34 +65,146 @@ void UserDatabase::createTableIfNotExists()
                "role TEXT NOT NULL)");
 }
 
-bool UserDatabase::checkUserExistence(const QString &username, const QString &phone, const QString &email)
+//默认管理员
+void UserDatabase::ensureInitialAdmin()
+{
+    // 检查是否存在管理员账号
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM users WHERE role = :role");
+    query.bindValue(":role", "admin");
+    if (!query.exec()) {
+        logError("Error checking admin existence:", query.lastError());
+        return;
+    }
+    if (query.next()) {
+        int adminCount = query.value(0).toInt();
+        if (adminCount == 0) {
+            // 如果不存在管理员，创建一个默认的管理员账号
+            QString defaultAdminUsername = "admin";
+            QString defaultAdminPassword = "admin123"; // 请务必在首次登录后更改此密码
+
+            QByteArray hash = QCryptographicHash::hash(defaultAdminPassword.toUtf8(), QCryptographicHash::Sha256);
+            QString encryptedPassword = hash.toHex();  // 获取加密后的密码
+            QString defaultAdminEmail = "admin123@qq.com";
+            QString defaultAdminPhone = "13195849795";
+            QString defaultAdminNickname = "Admin";
+            QString role = "admin";
+
+            bool saveSuccess = saveUserInfo(defaultAdminUsername, encryptedPassword, defaultAdminEmail, defaultAdminPhone, defaultAdminNickname, role);
+            if (saveSuccess) {
+                qDebug() << "初始管理员账号已创建。用户名：" << defaultAdminUsername << " 密码：" << defaultAdminPassword;
+                QMessageBox::information(this, "初始化成功", "默认管理员账号已创建。\n用户名: admin\n密码: admin123\n请登录后立即更改密码。");
+            } else {
+                qDebug() << "创建初始管理员账号失败。";
+                QMessageBox::warning(this, "初始化失败", "无法创建默认管理员账号，请联系管理员。");
+            }
+        }
+    }
+}
+
+
+bool UserDatabase::checkUsernameExists(const QString &username)
 {
     QSqlQuery query(m_db);
-    query.prepare("SELECT COUNT(*) FROM users WHERE username = :username OR phone = :phone OR email = :email");
+    query.prepare("SELECT COUNT(*) FROM users WHERE username = :username");
     query.bindValue(":username", username);
-    query.bindValue(":phone", phone);
-    query.bindValue(":email", email);
-    query.exec();
-    query.next();
-
-    if (query.value(0).toInt() > 0) {
-        qDebug() << "用户名、手机号或邮箱已存在";
+    if (!query.exec()) {
+        logError("Error checking username existence:", query.lastError());
         return true;
+    }
+    if (query.next()) {
+        return query.value(0).toInt() > 0;
     }
     return false;
 }
 
+bool UserDatabase::checkPhoneExists(const QString &phone)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM users WHERE phone = :phone");
+    query.bindValue(":phone", phone);
+    if (!query.exec()) {
+        logError("Error checking phone existence:", query.lastError());
+        return true;
+    }
+    if (query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    return false;
+}
+
+bool UserDatabase::checkEmailExists(const QString &email)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+    query.bindValue(":email", email);
+    if (!query.exec()) {
+        logError("Error checking email existence:", query.lastError());
+        return true;
+    }
+    if (query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    return false;
+}
+
+bool UserDatabase::checkUserExistence(const QString &username, const QString &phone, const QString &email)
+{
+    Q_UNUSED(username);
+    Q_UNUSED(phone);
+    Q_UNUSED(email);
+    return false;
+}
+
+// 统计管理员数量
+int UserDatabase::countAdmins()
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM users WHERE role = :role");
+    query.bindValue(":role", "admin");
+    if (!query.exec()) {
+        logError("Error counting admins:", query.lastError());
+        return 0;
+    }
+
+    if (query.next()) {
+        return query.value(0).toInt();
+    }
+
+    return 0;
+}
 
 // 保存用户信息
-void UserDatabase::saveUserInfo(const QString &username, const QString &password, const QString &email, const QString &phone, const QString &nickname, const QString &role)
+bool UserDatabase::saveUserInfo(const QString &username, const QString &password, const QString &email, const QString &phone, const QString &nickname, const QString &role)
 {
-    // 检查是否有相同的用户名、手机号、邮箱
-    if (checkUserExistence(username, phone, email)) {
-        return;
+    // 使用 Validator 类进行格式验证
+    if (!Validator::isValidUsername(username)) {
+        qDebug() << "Invalid username format.";
+        return false;
+    }
+
+    if (!Validator::isValidPassword(password)) {
+        qDebug() << "Invalid password format.";
+        return false;
+    }
+
+    if (!Validator::isValidEmail(email)) {
+        qDebug() << "Invalid email format.";
+        return false;
+    }
+
+    if (!Validator::isValidPhone(phone)) {
+        qDebug() << "Invalid phone format.";
+        return false;
+    }
+
+    // 角色验证
+    if (role != "user" && role != "admin") {
+        qDebug() << "Invalid role.";
+        return false;
     }
 
     QSqlQuery query(m_db);
-    m_db.transaction();  // 开启事务
 
     query.prepare("INSERT INTO users (username, password, email, phone, nickname, role) "
                   "VALUES (:username, :password, :email, :phone, :nickname, :role)");
@@ -98,18 +216,16 @@ void UserDatabase::saveUserInfo(const QString &username, const QString &password
     query.bindValue(":role", role);
 
     if (!query.exec()) {
-        m_db.rollback();  // 如果插入失败，回滚事务
         logError("Error saving user info:", query.lastError());
+        return false;
     } else {
-        m_db.commit();  // 提交事务
         qDebug() << "User info saved successfully!";
+        return true;
     }
 }
 
-
-
 // 删除指定用户名的用户信息
-void UserDatabase::deleteUserInfo(const QString &username)
+bool UserDatabase::deleteUserInfo(const QString &username)
 {
     QSqlQuery query(m_db);
     query.prepare("DELETE FROM users WHERE username = :username");
@@ -117,25 +233,22 @@ void UserDatabase::deleteUserInfo(const QString &username)
 
     if (!query.exec()) {
         logError("Error deleting user:", query.lastError());
+        return false;
     }
+    return true;
 }
 
 // 更新用户密码
 bool UserDatabase::updateUserInfo(const QString &username, const QString &newPassword)
 {
-    // 验证用户名不能为空
-    if (username.isEmpty()) {
-        qDebug() << "用户名不能为空，请检查输入。";
+    // 使用 Validator 类进行格式验证
+    if (!Validator::isValidUsername(username)) {
+        qDebug() << "Invalid username format.";
         return false;
     }
 
-    // 验证密码不能为空且长度符合一定要求
-    if (newPassword.isEmpty()) {
-        qDebug() << "密码不能为空，请输入新密码。";
-        return false;
-    }
-    if (newPassword.length() < 8) {
-        qDebug() << "密码长度至少应为8位，请重新输入合适的密码。";
+    if (!Validator::isValidPassword(newPassword)) {
+        qDebug() << "Invalid password format.";
         return false;
     }
 
@@ -146,62 +259,64 @@ bool UserDatabase::updateUserInfo(const QString &username, const QString &newPas
     query.bindValue(":password", newPassword);
 
     if (!query.exec()) {
-          // 可以记录错误信息或进行其他错误处理
-          qDebug() << "更新密码失败，错误信息：" << query.lastError();
-          return false;
-      }
+        qDebug() << "更新密码失败，错误信息：" << query.lastError();
+        return false;
+    }
 
-      // 检查是否有行被更新
-      return query.numRowsAffected() > 0;
+    // 检查是否有行被更新
+    return query.numRowsAffected() > 0;
 }
 
 
-// 更新用户信息
-void UserDatabase::updateUserInfo(const QString &username,
+// 更新用户信息（包含角色更新）
+bool UserDatabase::updateUserInfo(const QString &username,
                                   const QString &password,
                                   const QString &email,
                                   const QString &phone,
                                   const QString &nickname,
                                   const QString &role)
 {
-    // 验证用户名不能为空
-    if (username.isEmpty()) {
-        qDebug() << "用户名不能为空，请检查输入。";
-        return;
+    // 使用 Validator 类进行格式验证
+    if (!Validator::isValidUsername(username)) {
+        qDebug() << "Invalid username format.";
+        return false;
     }
 
-    // 验证密码不能为空且长度符合一定要求
-    if (!password.isEmpty() && password.length() < 8) {
-        qDebug() << "密码长度至少应为8位，请重新输入合适的密码。";
-        return;
+    if (!password.isEmpty() && !Validator::isValidPassword(password)) {
+        qDebug() << "Invalid password format.";
+        return false;
     }
 
-    // 验证邮箱格式
-    QRegularExpression emailRegex("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$");
-    if (!email.isEmpty() && !emailRegex.match(email).hasMatch()) {
-        qDebug() << "邮箱格式不正确，请输入有效的邮箱地址。";
-        return;
+    if (!email.isEmpty() && !Validator::isValidEmail(email)) {
+        qDebug() << "Invalid email format.";
+        return false;
     }
 
-    // 验证手机号格式（如果手机号不为空，验证格式）
+    if (!phone.isEmpty() && !Validator::isValidPhone(phone)) {
+        qDebug() << "Invalid phone format.";
+        return false;
+    }
+
+    // 角色验证
+    if (role != "user" && role != "admin") {
+        qDebug() << "Invalid role.";
+        return false;
+    }
+
+    // 验证手机号是否已经存在
     if (!phone.isEmpty()) {
-        QRegularExpression phoneRegex("^1[3-9]\\d{9}$"); // 中国大陆手机号验证
-        if (!phoneRegex.match(phone).hasMatch()) {
-            qDebug() << "手机号格式不正确，请输入有效的手机号。";
-            return;
-        }
-
-        // 检查手机号是否已经存在
         QSqlQuery checkPhoneQuery(m_db);
         checkPhoneQuery.prepare("SELECT COUNT(*) FROM users WHERE phone = :phone AND username != :username");
         checkPhoneQuery.bindValue(":phone", phone);
         checkPhoneQuery.bindValue(":username", username);
-        checkPhoneQuery.exec();
+        if (!checkPhoneQuery.exec()) {
+            logError("Error checking phone existence:", checkPhoneQuery.lastError());
+            return false;
+        }
         checkPhoneQuery.next();
-
         if (checkPhoneQuery.value(0).toInt() > 0) {
-            qDebug() << "该手机号已经被其他用户注册，请更换手机号。";
-            return;
+            qDebug() << "Phone number already exists.";
+            return false;
         }
     }
 
@@ -218,56 +333,56 @@ void UserDatabase::updateUserInfo(const QString &username,
     // 执行查询并检查是否成功
     if (!query.exec()) {
         qDebug() << "更新用户信息失败，错误信息：" << query.lastError().text();
+        return false;
     } else {
         qDebug() << "用户信息更新成功。";
+        return true;
     }
 }
 
-// 更新用户信息（不修改用户角色）
-void UserDatabase::updateUserInfo(const QString &username,
+
+// 更新用户信息（不包含角色更新）
+bool UserDatabase::updateUserInfo(const QString &username,
                                   const QString &password,
                                   const QString &email,
                                   const QString &phone,
                                   const QString &nickname)
 {
-    // 验证用户名不能为空
-    if (username.isEmpty()) {
-        qDebug() << "用户名不能为空，请检查输入。";
-        return;
+    // 使用 Validator 类进行格式验证
+    if (!Validator::isValidUsername(username)) {
+        qDebug() << "Invalid username format.";
+        return false;
     }
 
-    // 验证密码不能为空且长度符合一定要求
-    if (!password.isEmpty() && password.length() < 8) {
-        qDebug() << "密码长度至少应为8位，请重新输入合适的密码。";
-        return;
+    if (!password.isEmpty() && !Validator::isValidPassword(password)) {
+        qDebug() << "Invalid password format.";
+        return false;
     }
 
-    // 验证邮箱格式
-    QRegularExpression emailRegex("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$");
-    if (!email.isEmpty() && !emailRegex.match(email).hasMatch()) {
-        qDebug() << "邮箱格式不正确，请输入有效的邮箱地址。";
-        return;
+    if (!email.isEmpty() && !Validator::isValidEmail(email)) {
+        qDebug() << "Invalid email format.";
+        return false;
     }
 
-    // 验证手机号格式（如果手机号不为空，验证格式）
+    if (!phone.isEmpty() && !Validator::isValidPhone(phone)) {
+        qDebug() << "Invalid phone format.";
+        return false;
+    }
+
+    // 验证手机号是否已经存在
     if (!phone.isEmpty()) {
-        QRegularExpression phoneRegex("^1[3-9]\\d{9}$"); // 中国大陆手机号验证
-        if (!phoneRegex.match(phone).hasMatch()) {
-            qDebug() << "手机号格式不正确，请输入有效的手机号。";
-            return;
-        }
-
-        // 检查手机号是否已经存在
         QSqlQuery checkPhoneQuery(m_db);
         checkPhoneQuery.prepare("SELECT COUNT(*) FROM users WHERE phone = :phone AND username != :username");
         checkPhoneQuery.bindValue(":phone", phone);
         checkPhoneQuery.bindValue(":username", username);
-        checkPhoneQuery.exec();
+        if (!checkPhoneQuery.exec()) {
+            logError("Error checking phone existence:", checkPhoneQuery.lastError());
+            return false;
+        }
         checkPhoneQuery.next();
-
         if (checkPhoneQuery.value(0).toInt() > 0) {
-            qDebug() << "该手机号已经被其他用户注册，请更换手机号。";
-            return;
+            qDebug() << "Phone number already exists.";
+            return false;
         }
     }
 
@@ -283,8 +398,35 @@ void UserDatabase::updateUserInfo(const QString &username,
     // 执行查询并检查是否成功
     if (!query.exec()) {
         qDebug() << "更新用户信息失败，错误信息：" << query.lastError().text();
+        return false;
     } else {
         qDebug() << "用户信息更新成功。";
+        return true;
+    }
+}
+
+
+QString UserDatabase::getUserNickname(const QString &username)
+{
+    if (username.isEmpty()) {
+        qDebug() << "用户名不能为空。";
+        return "";
+    }
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT nickname FROM users WHERE username = :username");
+    query.bindValue(":username", username);
+
+    if (!query.exec()) {
+        qDebug() << "获取用户昵称失败，错误信息：" << query.lastError().text();
+        return "";
+    }
+
+    if (query.next()) {
+        return query.value("nickname").toString();
+    } else {
+        qDebug() << "未找到对应的用户昵称。";
+        return "";
     }
 }
 
