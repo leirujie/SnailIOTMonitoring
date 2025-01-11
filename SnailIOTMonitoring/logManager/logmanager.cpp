@@ -25,7 +25,7 @@ LogManager::LogManager(QObject *parent)
     query.exec("CREATE TABLE IF NOT EXISTS system_logs ("
                 "log_id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 "timestamp TEXT NOT NULL,"
-                "log_type TEXT NOT NULL,"
+                "log_type TEXT CHECK(log_type IN ('system', 'operation', 'alarm', 'exception')),"
                 "log_level TEXT CHECK(log_level IN ('INFO', 'WARNING', 'ERROR', 'CRITICAL')),"
                 "content TEXT NOT NULL)");
 
@@ -62,19 +62,24 @@ void LogManager::setLogLevel(LogLevel level) {
     currentLogLevel = level;
 }
 
-void LogManager::logMessage(LogLevel level, const QString &message) {
+void LogManager::logMessage(LogLevel level, const QString &logType, const QString &message) {
     QMutexLocker locker(&mutex);
     if (level < currentLogLevel || !logFile.isOpen()) {
         return;
     }
 
+    // 获取当前时间
     QString logTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    // 将日志等级转换为字符串
     QString logLevelStr = logLevelToString(level);
-    QString logEntry = QString("[%1] [%2] %3")
+    // 格式化日志条目：时间 日志等级 日志类型 日志内容
+    QString logEntry = QString("[%1] [%2] [%3] %4")
                            .arg(logTime)
                            .arg(logLevelStr)
+                           .arg(logType)  // 添加日志类型
                            .arg(message);
 
+    // 写入日志文件
     logStream << logEntry << Qt::endl;
     logStream.flush();
 
@@ -82,7 +87,7 @@ void LogManager::logMessage(LogLevel level, const QString &message) {
     QSqlQuery query;
     query.prepare("INSERT INTO system_logs (timestamp, log_type, log_level, content) VALUES (?, ?, ?, ?)");
     query.addBindValue(logTime);
-    query.addBindValue("System");
+    query.addBindValue(logType);  // 使用传入的日志类型
     query.addBindValue(logLevelStr);
     query.addBindValue(message);
 
@@ -91,9 +96,10 @@ void LogManager::logMessage(LogLevel level, const QString &message) {
     }
 
     // 发出信号给界面
-    LogEntry entry = {logLevelStr, logTime, "System", message};
+    LogEntry entry = {logLevelStr, logTime, logType, message};
     emit logAdded(entry);
 }
+
 
 QString LogManager::logLevelToString(LogLevel level) {
     switch (level) {

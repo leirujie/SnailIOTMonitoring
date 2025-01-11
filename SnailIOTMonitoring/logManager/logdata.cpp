@@ -52,7 +52,8 @@ void logdata::loadLogsFromFile() {
     QTextStream in(&file);
     ui->tableWidget->setRowCount(0); // 清空表格内容
 
-    QRegularExpression logPattern(R"(\[(.+?)\] \[(.+?)\] (.+))");
+    // 正则表达式匹配新的日志格式：时间 等级 类型 内容
+    QRegularExpression logPattern(R"(\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] \[(\w+)\] \[(\w+)\] (.+))");
 
     QDateTime fromDateTime = ui->startTimeEdit->dateTime();
     QDateTime toDateTime = ui->endTimeEdit->dateTime();
@@ -80,7 +81,8 @@ void logdata::loadLogsFromFile() {
         }
 
         QString level = match.captured(2); // 捕获等级
-        QString content = match.captured(3); // 捕获日志内容
+        QString type = match.captured(3);  // 捕获类型
+        QString content = match.captured(4); // 捕获日志内容
 
         // 检查时间范围
         if (logDateTime >= fromDateTime && logDateTime <= toDateTime) {
@@ -105,7 +107,7 @@ void logdata::loadLogsFromFile() {
                     }
 
                     QTableWidgetItem *timeItem = new QTableWidgetItem(time);    // 时间
-                    QTableWidgetItem *typeItem = new QTableWidgetItem("日志");   // 类型 (可根据需要动态设置)
+                    QTableWidgetItem *typeItem = new QTableWidgetItem(type);    // 类型
                     QTableWidgetItem *contentItem = new QTableWidgetItem(content); // 内容
 
                     // 设置单元格内容

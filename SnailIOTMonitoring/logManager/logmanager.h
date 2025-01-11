@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class LogManager; }
@@ -38,7 +39,7 @@ public:
     };
 
     static LogManager& instance();
-    void logMessage(LogLevel level, const QString &message);
+    void logMessage(LogLevel level, const QString &logType, const QString &message);
     void setLogFile(const QString &filePath);
     void setLogLevel(LogLevel level);
 
