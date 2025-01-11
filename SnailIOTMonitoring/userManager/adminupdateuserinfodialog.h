@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include "UserDatabase.h"
+#include "logManager/logdata.h"
+#include "alertManager/alertmanager.h"
 
 namespace Ui {
 class adminUpdateUserInfoDialog;

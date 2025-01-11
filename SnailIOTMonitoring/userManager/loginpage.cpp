@@ -58,7 +58,6 @@ void LoginPage::loginClicked()
         return;
     }
 
-
     // 对输入的密码进行SHA-256加密处理
     QByteArray hash = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256);
     QString encryptedPassword = hash.toHex();  // 获取加密后的密码
@@ -72,6 +71,7 @@ void LoginPage::loginClicked()
             g_currentUsername = username;//全局变量保存当前登录用户
             g_usernameMutex.unlock();
             QMessageBox::information(this, "成功", "登录成功", QMessageBox::Ok);
+            LogManager::instance().logMessage(LogManager::INFO, "operation", "用户" + username + "登录了系统");
             // 登录成功后根据用户角色（admin，user）进入对应的菜单
             role = userInfo["role"];
             if (role == "user") {
@@ -108,7 +108,6 @@ void LoginPage::clearInputLogin() {
         ui->passwordEdit->clear();
     }
 }
-
 
 LoginPage::~LoginPage()
 {

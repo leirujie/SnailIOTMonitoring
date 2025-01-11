@@ -12,6 +12,7 @@ AdminMenu::AdminMenu(QWidget *parent) : QWidget(parent)
     ui = new Ui::AdminMenu;
     ui->setupUi(this);
     logDataPage = nullptr;  // 初始化logDataPage为nullptr
+    alertmanagerpage = nullptr;  // 确保在构造函数中初始化
     // 获取数据库单例实例
     db = UserDatabase::getInstance();
     //获取当前用户信息
@@ -92,7 +93,6 @@ void AdminMenu::on_btnAddUserClicked()
     }
 }
 
-
 void AdminMenu::on_btnDelUserClicked()
 {
     // 获取当前表格中被选中的行
@@ -155,6 +155,9 @@ void AdminMenu::on_btnDelUserClicked()
                 allDeleted = false;
                 failedUsers += QString("'%1', ").arg(username);
             }
+            else {
+            LogManager::instance().logMessage(LogManager::INFO, "operation", QString("管理员删除了用户 %1").arg(username));
+        }
         }
 
         if (allDeleted) {
@@ -254,7 +257,7 @@ AdminMenu::~AdminMenu()
     delete ui;
     delete logDataPage;
     delete updateUserInfoDialog;
-
+    delete alertmanagerpage;
     delete realtimeDataPage;
     delete historyDataPage;
 }

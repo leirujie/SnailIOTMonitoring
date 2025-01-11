@@ -5,6 +5,8 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include "UserDatabase.h"
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 namespace Ui {
 class AddUserDialog;

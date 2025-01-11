@@ -18,6 +18,7 @@ UserDatabase::UserDatabase(QWidget *parent) : QWidget(parent)
 {
     if (!openDatabase()) {
         QMessageBox::critical(this, "数据库错误", "无法打开数据库连接！");
+        LogManager::instance().logMessage(LogManager::ERROR, "exception", "用户数据库连接失败");
         return;
     }
     createTableIfNotExists();//创建表
@@ -41,6 +42,7 @@ bool UserDatabase::openDatabase()
         }
     }
     return true;
+
 }
 
 // 关闭数据库连接
@@ -49,6 +51,7 @@ void UserDatabase::closeDatabase()
     if (m_db.isOpen()) {
         m_db.close();
     }
+    QSqlDatabase::removeDatabase("my_connection_name"); // 移除连接
 }
 
 // 创建数据库表（如果不存在）
@@ -97,6 +100,7 @@ void UserDatabase::ensureInitialAdmin()
             } else {
                 qDebug() << "创建初始管理员账号失败。";
                 QMessageBox::warning(this, "初始化失败", "无法创建默认管理员账号，请联系管理员。");
+                LogManager::instance().logMessage(LogManager::ERROR, "system", "创建默认管理员账号失败");
             }
         }
     }
@@ -433,6 +437,13 @@ QString UserDatabase::getUserNickname(const QString &username)
 // 根据用户名查询用户信息
 QMap<QString, QString> UserDatabase::queryUserInfo(const QString &username)
 {
+    if (!m_db.isOpen()) {
+        if (!openDatabase()) {
+            logError("Database not open in queryUserInfo:", m_db.lastError());
+            return QMap<QString, QString>();
+        }
+    }
+
     QMap<QString, QString> userInfo;
     QSqlQuery query(m_db);
     query.prepare("SELECT username, password, email, phone, nickname, role FROM users WHERE username = :username");
@@ -449,6 +460,7 @@ QMap<QString, QString> UserDatabase::queryUserInfo(const QString &username)
     }
     return userInfo;
 }
+
 
 // 查询所有用户信息，返回包含所有用户各字段信息的QMap列表
 QList<QMap<QString, QString>> UserDatabase::queryAllUserInfo()

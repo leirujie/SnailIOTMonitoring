@@ -97,6 +97,7 @@ void adminUpdateUserInfoDialog::on_updateButton_clicked()
     bool updateSuccess = db->updateUserInfo(username, password, email, phone, currentNickname, role);
     if (updateSuccess) {
         QMessageBox::information(this, "成功", "用户信息更新成功！");
+        LogManager::instance().logMessage(LogManager::INFO, "operation", "管理员更新了用户" + username + "的信息");
         accept();  // 关闭对话框
     }  else {
         QMessageBox::warning(this, "错误", "用户信息更新失败，请检查输入的信息是否符合要求或联系管理员！");

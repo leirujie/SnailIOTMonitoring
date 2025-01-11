@@ -6,6 +6,8 @@
 #include <QMap>
 #include <QVariant>
 #include <QList>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 class UserDatabase : public QWidget
 {

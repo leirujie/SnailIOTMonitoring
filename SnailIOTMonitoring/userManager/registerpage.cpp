@@ -77,12 +77,14 @@ void RegisterPage::onRegisClicked()
     bool saveSuccess = db->saveUserInfo(username, encryptedPassword, email, phone, nickname, role);
     if (saveSuccess) {
         QMessageBox::information(this, "成功", "注册成功！");
+        LogManager::instance().logMessage(LogManager::INFO, "operation", "用户" + username + "注册了系统");
         // 发射信号，传递页面索引，通知外部切换回启动界面
         emit switchPage(LAUNCH_SCREEN_PAGE);
     } else {
         // 如果保存失败，进一步判断是否是数据库连接等其他问题导致
         if (!db->openDatabase()) {
             QMessageBox::warning(this, "错误", "数据库连接失败，无法保存用户信息");
+            LogManager::instance().logMessage(LogManager::ERROR, "exception", "用户数据库连接失败");
             qDebug() << "数据库连接失败，无法保存用户信息";
         } else {
             QMessageBox::warning(this, "错误", "注册信息保存失败，请稍后重试！");

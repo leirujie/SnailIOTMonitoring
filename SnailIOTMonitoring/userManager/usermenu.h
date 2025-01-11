@@ -8,6 +8,7 @@
 #include "dataMonitor/realtimedata.h"
 #include "dataMonitor/historytimedata.h"
 #include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 #include "deviceManager/userdevicemanager.h"
 
 //enum UserPageIndex {
@@ -57,7 +58,7 @@ private:
     QWidget *pageDeviceData;
     RealTimeData *realtimeDataPage = nullptr;
     HistoryTimeData *historyDataPage = nullptr;
-    QWidget *pageUserLog;
+    logdata *logDataPage;
 };
 
 #endif // USERMENU_H

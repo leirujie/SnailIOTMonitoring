@@ -16,8 +16,7 @@ UserMenu::UserMenu(QWidget *parent) :
     pageUpdateInfo(nullptr),       // 初始化修改个人信息页的指针
     pageUpdatePassword(nullptr),    // 初始化修改密码页的指针
     pageDeviceInfo(nullptr),       // 初始化设备数据页的指针
-    pageDeviceData(nullptr),
-    pageUserLog(nullptr)          // 初始化用户日志页的指针
+    pageDeviceData(nullptr)
 {
     ui->setupUi(this);
     // 获取数据库单例实例
@@ -31,7 +30,7 @@ UserMenu::UserMenu(QWidget *parent) :
     pageUpdateInfo = ui->pageUpdateInfo;
     pageUpdatePassword = ui->pageUpdatePassword;
     pageDeviceData = ui->pageDeviceData;
-    pageUserLog = ui->pageUserLog;
+    logDataPage = nullptr;  // 初始化logDataPage为nullptr
 
     // 添加页面到stackedWidget
     m_userStackedWidget->addWidget(ui->pageViewUserInfo);     // 添加查看个人信息页
@@ -65,7 +64,11 @@ UserMenu::UserMenu(QWidget *parent) :
     });
 
     connect(ui->btnCatUserLog, &QPushButton::clicked, this, [=]() {      //个人日志页面
-        m_userStackedWidget->setCurrentWidget(pageUserLog);
+        if (!logDataPage) {
+            logDataPage = new logdata();
+            m_userStackedWidget->addWidget(logDataPage);
+        }
+        m_userStackedWidget->setCurrentWidget(logDataPage);
     });
 
     connect(ui->btnBack,&QPushButton::clicked,this,[=](){emit switchPage(ACCOUNT_PWD_LOGIN_PAGE);});//返回登陆页面
@@ -73,6 +76,19 @@ UserMenu::UserMenu(QWidget *parent) :
 
 void UserMenu::on_btnUserViewInfoClicked()
 {
+    // 清理动态创建的页面
+    if (realtimeDataPage) {
+        m_userStackedWidget->removeWidget(realtimeDataPage);
+        delete realtimeDataPage;
+        realtimeDataPage = nullptr;
+    }
+
+    if (historyDataPage) {
+        m_userStackedWidget->removeWidget(historyDataPage);
+        delete historyDataPage;
+        historyDataPage = nullptr;
+    }
+
     QString m_username;
     // 获取当前用户
     g_usernameMutex.lock();
@@ -90,6 +106,7 @@ void UserMenu::on_btnUserViewInfoClicked()
         QMessageBox::warning(this, "错误", "未能获取到用户信息，请重新登录");
     }
 }
+
 
 //修改用户信息
 void UserMenu::on_btnUpdateClicked()
@@ -127,6 +144,7 @@ void UserMenu::on_btnUpdateClicked()
     bool updateSuccess = db->updateUserInfo(m_username, m_currentUserInfo["password"], updatedEmail, updatedPhone, updatedNickname);
     if (updateSuccess) {
         QMessageBox::information(this, "成功", "用户信息更新成功！");
+        LogManager::instance().logMessage(LogManager::INFO, "operation", "用户" + m_username + "更新了个人信息");
     } else {
         QMessageBox::warning(this, "错误", "用户信息更新失败，请检查输入的信息是否符合要求或联系管理员！");
     }
@@ -187,6 +205,7 @@ void UserMenu::on_btnUpdatePasswordClicked()
         ui->lineEditAgainPwd->clear();
 
         QMessageBox::information(this, "提示", "密码修改成功！");
+        LogManager::instance().logMessage(LogManager::INFO, "operation", "用户" + m_username + "修改了密码");
         emit switchPage(ACCOUNT_PWD_LOGIN_PAGE);
     } else {
         QMessageBox::warning(this, "错误", "密码修改失败，请检查输入的信息是否符合要求或联系管理员！");
@@ -215,15 +234,29 @@ void UserMenu::showDataManagerDialog()
     layout->addWidget(btnHistorical);
 
     connect(btnRealtime, &QPushButton::clicked, this, [this]() {
-        // 切换到实时数据页面
-        realtimeDataPage = new RealTimeData(); // 实现你的实时数据页面
+        // 移除之前可能存在的实时数据页面
+        if (realtimeDataPage) {
+            m_userStackedWidget->removeWidget(realtimeDataPage);
+            delete realtimeDataPage;
+            realtimeDataPage = nullptr;
+        }
+
+        // 创建并切换到实时数据页面
+        realtimeDataPage = new RealTimeData();
         m_userStackedWidget->addWidget(realtimeDataPage);
         m_userStackedWidget->setCurrentWidget(realtimeDataPage);
     });
 
     connect(btnHistorical, &QPushButton::clicked, this, [this]() {
-        // 切换到历史数据页面
-        historyDataPage = new HistoryTimeData(); // 实现你的历史数据页面
+        // 移除之前可能存在的历史数据页面
+        if (historyDataPage) {
+            m_userStackedWidget->removeWidget(historyDataPage);
+            delete historyDataPage;
+            historyDataPage = nullptr;
+        }
+
+        // 创建并切换到历史数据页面
+        historyDataPage = new HistoryTimeData();
         m_userStackedWidget->addWidget(historyDataPage);
         m_userStackedWidget->setCurrentWidget(historyDataPage);
     });
@@ -234,7 +267,6 @@ void UserMenu::showDataManagerDialog()
 UserMenu::~UserMenu()
 {
     delete ui;
-    delete pageUserLog;
     delete pageUpdateInfo;
     delete pageViewUserInfo;
     delete realtimeDataPage;

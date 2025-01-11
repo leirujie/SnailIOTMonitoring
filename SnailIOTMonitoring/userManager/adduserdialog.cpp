@@ -89,12 +89,14 @@ void AddUserDialog::on_addButtonClicked()
     bool saveSuccess = db->saveUserInfo(username, encryptedPassword, email, phone, defaultNickname, role);
     if (saveSuccess) {
         QMessageBox::information(this, "成功", "用户添加成功！");
+        LogManager::instance().logMessage(LogManager::INFO, "operation", "管理员添加了用户" + username);
         accept();  // 关闭对话框
     } else {
         // 如果保存失败
         QMap<QString, QString> testQuery = db->queryUserInfo(username);
         if (testQuery.empty()) {
             QMessageBox::warning(this, "错误", "数据库连接可能出现问题，无法添加用户，请稍后重试！");
+            LogManager::instance().logMessage(LogManager::ERROR, "operation", "用户" + username + "添加失败");
             qDebug() << "可能数据库连接异常，添加用户失败";
         } else {
             QMessageBox::warning(this, "错误", "用户添加失败，请稍后重试！");
