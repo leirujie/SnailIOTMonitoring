@@ -7,6 +7,8 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVBoxLayout>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 class AddDeviceTypeGroupDialog : public QDialog
 {

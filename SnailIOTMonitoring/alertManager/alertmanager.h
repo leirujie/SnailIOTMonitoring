@@ -7,6 +7,8 @@
 #include <QSqlTableModel>
 #include <QDateTimeEdit>
 #include <QComboBox>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 class QPushButton;
 class QListView;

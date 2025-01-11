@@ -8,6 +8,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QComboBox>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 // 前向声明 Widget 类
 class AdminDeviceManager;

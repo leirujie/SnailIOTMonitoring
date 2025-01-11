@@ -34,7 +34,7 @@ AlertManager::AlertManager(QWidget *parent)
     endTimeEdit = new QDateTimeEdit(dateTime, this);
 
     alertTypeComboBox = new QComboBox(this);
-    alertTypeComboBox->addItems({"全部", "温度告警", "湿度告警", "光照强度告警"});
+    alertTypeComboBox->addItems({"全部", "温度检测器", "湿度检测器", "光照检测器"});
     queryAlertButton = new QPushButton("告警查询", this);
     alertRecordView = new QListView(this);
 
@@ -117,7 +117,7 @@ void AlertManager::setupDatabase()
 
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS alert_records (
-//            alarm_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alarm_id INTEGER PRIMARY KEY AUTOINCREMENT,
             device_id TEXT NOT NULL,
             timestamp TEXT,
             content TEXT,
@@ -144,6 +144,7 @@ void AlertManager::setupAlertRecordModel()
     alertRecordModel->setTable("alert_records");
     alertRecordModel->select();
     alertRecordView->setModel(alertRecordModel);
+    alertRecordView->setModelColumn(3);
 }
 
 // 弹窗：输入规则数据
@@ -202,7 +203,7 @@ void AlertManager::onCreateRuleClicked()
     if (showRuleDialog(deviceId, description, condition, action, deviceType))
     {
         QSqlQuery query;
-        query.prepare("INSERT INTO alarm_rules (device_id, device_type, description, condition, action) VALUES (?, ?, ?, ?, ?)"); // 修改 SQL 语句
+        query.prepare("INSERT INTO alarm_rules (device_id, device_type, description, condition, action) VALUES (?, ?, ?, ?, ?)");
         query.addBindValue(deviceId);
         query.addBindValue(deviceType);
         query.addBindValue(description);
@@ -211,6 +212,17 @@ void AlertManager::onCreateRuleClicked()
         if (!query.exec())
         {
             QMessageBox::critical(this, "错误", "插入规则时出错：" + query.lastError().text());
+        }
+        else
+        {
+            // 记录日志
+            LogManager::instance().logMessage(LogManager::INFO, "operation",
+                                              QString("创建规则: 设备ID=%1, 设备类型=%2, 描述=%3, 条件=%4, 动作=%5")
+                                                  .arg(deviceId)
+                                                  .arg(deviceType)
+                                                  .arg(description)
+                                                  .arg(condition)
+                                                  .arg(action));
         }
         loadAlarmRules();
     }
@@ -226,20 +238,18 @@ void AlertManager::onEditRuleClicked()
         return;
     }
 
-    // 从数据模型中获取当前规则的各个字段的值
     QString deviceId = rulesModel->data(rulesModel->index(index.row(), 1)).toString();
     QString deviceType = rulesModel->data(rulesModel->index(index.row(), 2)).toString();
     QString description = rulesModel->data(rulesModel->index(index.row(), 3)).toString();
     QString condition = rulesModel->data(rulesModel->index(index.row(), 4)).toString();
     QString action = rulesModel->data(rulesModel->index(index.row(), 5)).toString();
 
-    // 显示编辑规则的对话框，并初始化输入框为当前规则的值
     if (showRuleDialog(deviceId, description, condition, action, deviceType))
     {
         QSqlQuery query;
-        query.prepare("UPDATE alarm_rules SET device_id=?, device_type=?, description=?, condition=?, action=? WHERE rule_id=?"); // 修改 SQL 语句
+        query.prepare("UPDATE alarm_rules SET device_id=?, device_type=?, description=?, condition=?, action=? WHERE rule_id=?");
         query.addBindValue(deviceId);
-        query.addBindValue(deviceType); // 绑定设备类型
+        query.addBindValue(deviceType);
         query.addBindValue(description);
         query.addBindValue(condition);
         query.addBindValue(action);
@@ -248,6 +258,18 @@ void AlertManager::onEditRuleClicked()
         if (!query.exec())
         {
             QMessageBox::critical(this, "错误", "更新规则时出错：" + query.lastError().text());
+        }
+        else
+        {
+            // 记录日志
+            LogManager::instance().logMessage(LogManager::INFO, "operation",
+                                              QString("编辑规则: 规则ID=%1, 设备ID=%2, 设备类型=%3, 描述=%4, 条件=%5, 动作=%6")
+                                                  .arg(ruleId)
+                                                  .arg(deviceId)
+                                                  .arg(deviceType)
+                                                  .arg(description)
+                                                  .arg(condition)
+                                                  .arg(action));
         }
         loadAlarmRules();
     }
@@ -261,12 +283,30 @@ void AlertManager::onDeleteRuleClicked()
         return;
 
     int ruleId = rulesModel->data(rulesModel->index(index.row(), 0)).toInt();
+    QString deviceId = rulesModel->data(rulesModel->index(index.row(), 1)).toString();
+    QString deviceType = rulesModel->data(rulesModel->index(index.row(), 2)).toString();
+    QString description = rulesModel->data(rulesModel->index(index.row(), 3)).toString();
+    QString condition = rulesModel->data(rulesModel->index(index.row(), 4)).toString();
+    QString action = rulesModel->data(rulesModel->index(index.row(), 5)).toString();
+
     QSqlQuery query;
     query.prepare("DELETE FROM alarm_rules WHERE rule_id=?");
     query.addBindValue(ruleId);
     if (!query.exec())
     {
         QMessageBox::critical(this, "错误", "删除规则时出错：" + query.lastError().text());
+    }
+    else
+    {
+        // 记录日志
+        LogManager::instance().logMessage(LogManager::INFO, "operation",
+                                          QString("删除规则: 规则ID=%1, 设备ID=%2, 设备类型=%3, 描述=%4, 条件=%5, 动作=%6")
+                                              .arg(ruleId)
+                                              .arg(deviceId)
+                                              .arg(deviceType)
+                                              .arg(description)
+                                              .arg(condition)
+                                              .arg(action));
     }
     loadAlarmRules();
 }
@@ -289,90 +329,133 @@ void AlertManager::onQueryAlertClicked()
     QString startTime = startTimeEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
     QString endTime = endTimeEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
 
-    // 查询 alarm_rules 中的所有规则
-    QSqlQuery alarmRulesQuery(db); // 确保 alarmRulesQuery 被声明
-    alarmRulesQuery.prepare(R"(
-        SELECT device_type, device_id, condition FROM alarm_rules
-    )");
+    // 获取告警类型
+    QString alertType = alertTypeComboBox->currentText();
+    qDebug() << "时间范围:" << startTime << "到" << endTime << "，告警类型:" << alertType;
+
+    // 查询告警规则
+    QSqlQuery alarmRulesQuery(db);
+    alarmRulesQuery.prepare("SELECT device_type, device_id, condition FROM alarm_rules");
 
     if (!alarmRulesQuery.exec())
     {
-        QMessageBox::critical(this, "错误", "查询告警规则时出错：" + alarmRulesQuery.lastError().text());
+        qDebug() << "查询告警规则失败:" << alarmRulesQuery.lastError().text();
         return;
     }
 
-    // 清空旧的告警信息
-    QSqlQuery deleteOldAlerts(db);
-    deleteOldAlerts.exec("DELETE FROM alert_records");
-
     // 查询传感器数据
+    QString sensorQueryString = R"(
+        SELECT device_type, device_id, value, timestamp FROM data WHERE timestamp BETWEEN ? AND ?
+    )";
+
+    // 如果告警类型不是“全部”，则添加设备类型过滤条件
+    if (alertType != "全部")
+    {
+        sensorQueryString += " AND device_type = ?";
+        qDebug() << "添加设备类型过滤条件: " << alertType;
+    }
+
     QSqlQuery sensorQuery(sensorDb);
-    sensorQuery.prepare(R"(
-        SELECT device_type, device_id, value FROM data WHERE timestamp BETWEEN ? AND ?
-    )");
+    sensorQuery.prepare(sensorQueryString);
     sensorQuery.addBindValue(startTime);
     sensorQuery.addBindValue(endTime);
 
+    if (alertType != "全部")
+    {
+        // 根据设备类型过滤
+        sensorQuery.addBindValue(alertType);
+    }
+
     if (!sensorQuery.exec())
     {
-        QMessageBox::critical(this, "错误", "查询传感器数据时出错：" + sensorQuery.lastError().text());
+        qDebug() << "查询传感器数据失败:" << sensorQuery.lastError().text();
         return;
     }
 
-    // 检查传感器数据并根据规则触发报警
-    QSqlQuery insertQuery(db);
+    // 检查传感器数据结果
     while (sensorQuery.next())
     {
         QString sensorDeviceType = sensorQuery.value("device_type").toString();
         QString sensorDeviceId = sensorQuery.value("device_id").toString();
         double sensorValue = sensorQuery.value("value").toDouble();
+        QString sensorTimestamp = sensorQuery.value("timestamp").toString();
 
-        // 重置 alarmRulesQuery 以重新遍历
-        alarmRulesQuery.seek(0); // Reset to the beginning of the query result
+        qDebug() << "传感器数据:" << sensorDeviceType << sensorDeviceId << sensorValue << sensorTimestamp;
 
+        // 遍历告警规则
+        alarmRulesQuery.seek(0);
         while (alarmRulesQuery.next())
         {
             QString ruleDeviceType = alarmRulesQuery.value("device_type").toString();
             QString ruleDeviceId = alarmRulesQuery.value("device_id").toString();
-            QString condition = alarmRulesQuery.value("condition").toString().trimmed(); // 修剪空格
+            QString condition = alarmRulesQuery.value("condition").toString().trimmed();
 
-            // 输出当前传感器信息和条件
-            qDebug() << "传感器设备类型:" << sensorDeviceType
-                     << "设备ID:" << sensorDeviceId
-                     << "当前值:" << sensorValue
-                     << "条件:" << condition;
+            qDebug() << "告警规则:" << ruleDeviceType << ruleDeviceId << condition;
 
-            // 确认设备类型和 ID 匹配
+            // 匹配设备类型和 ID
             if (sensorDeviceType == ruleDeviceType && sensorDeviceId == ruleDeviceId)
             {
-                // 检查条件
+                // 解析条件
                 if (condition.startsWith(">"))
                 {
-                    double threshold = condition.mid(1).toDouble(); // 注意这里的索引
+                    double threshold = condition.mid(1).toDouble();
                     qDebug() << "阈值:" << threshold;
 
+                    // 检查是否触发告警
                     if (sensorValue > threshold)
                     {
-                        qDebug() << "触发告警插入数据库"; // 调试信息
+                        qDebug() << "触发告警";
                         QString content = QString("%1-设备%2监测到值大于%3，时间：%4")
                                               .arg(sensorDeviceType)
                                               .arg(sensorDeviceId)
                                               .arg(threshold)
-                                              .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+                                              .arg(sensorTimestamp);
+
+                        // 检查是否已存在相同的告警记录
+                        QSqlQuery checkQuery(db);
+                        checkQuery.prepare(R"(
+                            SELECT COUNT(*) FROM alert_records
+                            WHERE device_id = ? AND timestamp = ? AND content = ?
+                        )");
+                        checkQuery.addBindValue(sensorDeviceId);
+                        checkQuery.addBindValue(sensorTimestamp);
+                        checkQuery.addBindValue(content);
+
+                        if (checkQuery.exec() && checkQuery.next())
+                        {
+                            int count = checkQuery.value(0).toInt();
+                            if (count > 0)
+                            {
+                                qDebug() << "告警记录已存在，跳过插入";
+                                continue; // 跳过插入
+                            }
+                        }
 
                         // 插入告警记录
+                        QSqlQuery insertQuery(db);
                         insertQuery.prepare(R"(
                             INSERT INTO alert_records (device_id, timestamp, content, status, note) VALUES (?, ?, ?, ?, ?)
                         )");
                         insertQuery.addBindValue(sensorDeviceId);
-                        insertQuery.addBindValue(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+                        insertQuery.addBindValue(sensorTimestamp);
                         insertQuery.addBindValue(content);
                         insertQuery.addBindValue("未处理");
                         insertQuery.addBindValue("");
 
                         if (!insertQuery.exec())
                         {
-                            qDebug() << "插入告警记录时出错：" << insertQuery.lastError().text();
+                            qDebug() << "插入告警记录失败:" << insertQuery.lastError().text();
+                        }
+                        else
+                        {
+                            // 记录告警日志
+                            LogManager::instance().logMessage(LogManager::WARNING, "alarm",
+                                                             QString("告警触发: 设备类型=%1, 设备ID=%2, 值=%3, 阈值=%4, 时间=%5")
+                                                                 .arg(sensorDeviceType)
+                                                                 .arg(sensorDeviceId)
+                                                                 .arg(sensorValue)
+                                                                 .arg(threshold)
+                                                                 .arg(sensorTimestamp));
                         }
                     }
                 }
@@ -382,17 +465,41 @@ void AlertManager::onQueryAlertClicked()
 
     // 更新告警记录视图
     QSqlQuery alertRecordQuery(db);
-    alertRecordQuery.prepare(R"(
+    QString queryString = R"(
         SELECT * FROM alert_records WHERE timestamp BETWEEN ? AND ?
-    )");
+    )";
+
+    // 如果告警类型不是“全部”，则添加设备类型过滤条件
+    if (alertType != "全部")
+    {
+        queryString += " AND content LIKE ?";
+    }
+
+    alertRecordQuery.prepare(queryString);
     alertRecordQuery.addBindValue(startTime);
     alertRecordQuery.addBindValue(endTime);
 
+    if (alertType != "全部")
+    {
+        // 根据设备类型过滤
+        alertRecordQuery.addBindValue("%" + alertType + "%");
+    }
+
     if (!alertRecordQuery.exec())
     {
-        QMessageBox::critical(this, "错误", "查询告警记录时出错：" + alertRecordQuery.lastError().text());
+        qDebug() << "查询告警记录失败:" << alertRecordQuery.lastError().text();
         return;
     }
+
+    // 检查告警记录结果
+    int recordCount = 0;
+    while (alertRecordQuery.next())
+    {
+        recordCount++;
+        // 打印每一条记录的信息
+        qDebug() << "告警记录:" << alertRecordQuery.value("device_id").toString() << alertRecordQuery.value("timestamp").toString() << alertRecordQuery.value("content").toString();
+    }
+    qDebug() << "查询到的告警记录数量:" << recordCount;
 
     // 更新视图显示
     QSqlQueryModel *customAlertRecordModel = new QSqlQueryModel(this);

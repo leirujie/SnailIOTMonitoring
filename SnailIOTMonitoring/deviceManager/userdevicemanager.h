@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 namespace Ui {
 class UserDeviceManager;

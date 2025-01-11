@@ -11,6 +11,8 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include "logManager/logdata.h"
+#include "logManager/logmanager.h"
 
 namespace Ui {
 class AdminDeviceManager;

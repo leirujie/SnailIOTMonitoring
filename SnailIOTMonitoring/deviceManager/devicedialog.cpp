@@ -92,10 +92,8 @@ QList<QString> DeviceDialog::getDeviceInfo() const
 {
     return {
         nameEdit->text(),
-
-       typeComboBox->currentText(),
-
-         locationComboBox->currentText(), // 获取选择的设备位置
+        typeComboBox->currentText(),
+        locationComboBox->currentText(), // 获取选择的设备位置
         manufacturerEdit->text(),
         modelEdit->text(),
         installDateEdit->date().toString("yyyy-MM-dd")
