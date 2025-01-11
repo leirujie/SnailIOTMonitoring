@@ -13,6 +13,8 @@ UserDeviceManager::UserDeviceManager(QWidget *parent) :
     ui->deviceTable->setHorizontalHeaderLabels({"ID", "名称", "类型", "位置", "制造商", "型号", "安装日期"});
     ui->deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->deviceTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // 禁止编辑
+    ui->deviceTable->verticalHeader()->setVisible(false);//隐藏显示行号
+
     // 加载过滤条件（设备类型和设备位置）
     loadFilters();
     // 加载设备数据

@@ -39,6 +39,8 @@ public:
     void loadGroups();
     // 更新分组名称
     void updateGroupInDatabase(const QString &oldGroupName, const QString &oldGroupType, const QString &newGroupName);
+    void rearrangeDeviceIds();//设备表id重置
+    void rearrangeGroupIds();//设备分组id重置
 public slots:
     void onAddDevice();       // 添加设备
     void onEditDevice();      // 编辑设备

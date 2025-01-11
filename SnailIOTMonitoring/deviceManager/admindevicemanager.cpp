@@ -5,6 +5,7 @@
 #include <QSqlQuery>
 #include <QDebug>
 #include <QInputDialog>
+
 AdminDeviceManager::AdminDeviceManager(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::AdminDeviceManager)
@@ -361,6 +362,60 @@ void AdminDeviceManager::addGroupToDatabase(const QString &groupName, const QStr
 
 
 // 删除分组
+//void AdminDeviceManager::onDeleteGroup()
+//{
+//    // 获取用户选中的行
+//    int row = ui->groupTableWidget->currentRow();
+
+//    // 检查是否有选中的行
+//    if (row == -1) {
+//        QMessageBox::warning(this, "警告", "请先选择要删除的分组！");
+//        return;
+//    }
+
+//    // 获取该行的 ID、分组名称和类型
+//    int groupId = ui->groupTableWidget->item(row, 0)->text().toInt();  // 获取分组 ID
+//    QString groupName = ui->groupTableWidget->item(row, 1)->text();     // 获取分组名称
+//    QString groupType = ui->groupTableWidget->item(row, 2)->text();     // 获取分组类型
+
+//    // 弹出确认删除对话框
+//    QMessageBox::StandardButton reply;
+//    reply = QMessageBox::question(this, "确认删除", "你确定要删除这个分组吗？", QMessageBox::Yes | QMessageBox::No);
+
+//    if (reply == QMessageBox::Yes) {
+//        // 删除设备表中与分组相关的设备（根据分组类型）
+//        QSqlQuery deleteDevicesQuery;
+//        if (groupType == "设备类型") {
+//            deleteDevicesQuery.prepare("UPDATE devices SET type = NULL WHERE type = :groupName");
+//        } else if (groupType == "设备位置") {
+//            deleteDevicesQuery.prepare("UPDATE devices SET location = NULL WHERE location = :groupName");
+//        }
+
+//        deleteDevicesQuery.bindValue(":groupName", groupName);
+
+//        if (deleteDevicesQuery.exec()) {
+//            qDebug() << "相关设备的分组信息已删除或更新为 NULL。";
+//        } else {
+//            QMessageBox::critical(this, "数据库错误", "删除设备分组信息失败：" + deleteDevicesQuery.lastError().text());
+//        }
+
+//        // 执行删除分组操作
+//        QSqlQuery deleteGroupQuery;
+//        deleteGroupQuery.prepare("DELETE FROM groups WHERE id = :id");
+//        deleteGroupQuery.bindValue(":id", groupId);
+
+//        if (deleteGroupQuery.exec()) {
+//            // 删除成功，提示并刷新
+//            QMessageBox::information(this, "删除成功", "分组已成功删除！");
+
+//            // 重新加载分组数据到下拉框和表格
+//            loadGroups();
+//        } else {
+//            QMessageBox::critical(this, "数据库错误", "删除分组失败：" + deleteGroupQuery.lastError().text());
+//        }
+//    }
+//}
+
 void AdminDeviceManager::onDeleteGroup()
 {
     // 获取用户选中的行
@@ -407,7 +462,14 @@ void AdminDeviceManager::onDeleteGroup()
             // 删除成功，提示并刷新
             QMessageBox::information(this, "删除成功", "分组已成功删除！");
 
-            // 重新加载分组数据到下拉框和表格
+            // 重置自增长序列
+            QSqlQuery resetSeqQuery;
+            resetSeqQuery.exec("DELETE FROM sqlite_sequence WHERE name='groups'");
+
+            // 重新排列分组的 ID
+            rearrangeGroupIds();
+
+            // 重新加载分组数据
             loadGroups();
         } else {
             QMessageBox::critical(this, "数据库错误", "删除分组失败：" + deleteGroupQuery.lastError().text());
@@ -415,6 +477,34 @@ void AdminDeviceManager::onDeleteGroup()
     }
 }
 
+
+void AdminDeviceManager::rearrangeGroupIds()
+{
+    QSqlQuery query;
+    query.exec("SELECT id FROM groups ORDER BY id ASC");  // 获取所有分组的 ID，按顺序排列
+
+    int newId = 1;  // 从 ID 1 开始
+
+    while (query.next()) {
+        int oldId = query.value(0).toInt();
+
+        // 更新每个分组的 ID
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE groups SET id = :newId WHERE id = :oldId");
+        updateQuery.bindValue(":newId", newId);
+        updateQuery.bindValue(":oldId", oldId);
+
+        if (!updateQuery.exec()) {
+            qDebug() << "Failed to update group ID:" << updateQuery.lastError().text();
+        } else {
+            newId++;
+        }
+    }
+
+    // 重新设置自增序列，以确保下一次插入 ID 按顺序递增
+    QSqlQuery resetSeqQuery;
+    resetSeqQuery.exec("DELETE FROM sqlite_sequence WHERE name='groups'");
+}
 void AdminDeviceManager::loadGroups()
 {
     QSqlQuery query;
@@ -603,6 +693,18 @@ void AdminDeviceManager::updateDeviceInDatabase(int id, const QList<QString> &de
         }
 }
 
+//void AdminDeviceManager::deleteDeviceFromDatabase(int id)
+//{
+//    QSqlQuery query;
+//    query.prepare("DELETE FROM devices WHERE id = :id");
+//    query.bindValue(":id", id);
+
+//    if (!query.exec())
+//    {
+//        QMessageBox::critical(this, "数据库错误", query.lastError().text());
+//    }
+//}
+
 void AdminDeviceManager::deleteDeviceFromDatabase(int id)
 {
     QSqlQuery query;
@@ -613,8 +715,35 @@ void AdminDeviceManager::deleteDeviceFromDatabase(int id)
     {
         QMessageBox::critical(this, "数据库错误", query.lastError().text());
     }
+    // 清除自增长计数器，确保下次插入从1开始
+        query.exec("DELETE FROM sqlite_sequence WHERE name='devices';");
+
+        // 调用 rearrangeDeviceIds 重新排列 ID
+        rearrangeDeviceIds();
+
+
 }
 
+
+void AdminDeviceManager::rearrangeDeviceIds()
+{
+    QSqlQuery query;
+    query.exec("SELECT id FROM devices ORDER BY id");
+
+    int newId = 1;
+    while (query.next()) {
+        int oldId = query.value(0).toInt();
+        // 更新设备 ID
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE devices SET id = :newId WHERE id = :oldId");
+        updateQuery.bindValue(":newId", newId++);
+        updateQuery.bindValue(":oldId", oldId);
+        if (!updateQuery.exec()) {
+            QMessageBox::critical(this, "数据库错误", updateQuery.lastError().text());
+            return;
+        }
+    }
+}
 AdminDeviceManager::~AdminDeviceManager()
 {
     // 清理数据库连接
