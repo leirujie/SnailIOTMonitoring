@@ -27,7 +27,7 @@ Widget::Widget(QWidget *parent) :
     resizeDirection = None;
     this->installEventFilter(this);
 
-    this->resize(750,650);
+    this->resize(850,700);
 
     connect(m_centerWidget,&centerWidget::sendMessageByCenter,m_statusBar,&statusBar::onSendMessageByStatusBar);
 }
@@ -118,6 +118,8 @@ void Widget::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason)
         }
     }
 }
+
+
 
 Widget::~Widget()
 {

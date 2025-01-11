@@ -5,5 +5,9 @@
         <file>image/min.png</file>
         <file>image/woniu.png</file>
         <file>image/load.png</file>
+        <file>image/background.png</file>
+        <file>css/style.css</file>
+        <file>image/login.png</file>
+        <file>image/resg.png</file>
     </qresource>
 </RCC>
