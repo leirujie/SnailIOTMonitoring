@@ -154,9 +154,48 @@ bool UserDatabase::checkEmailExists(const QString &email)
 
 bool UserDatabase::checkUserExistence(const QString &username, const QString &phone, const QString &email)
 {
-    Q_UNUSED(username);
-    Q_UNUSED(phone);
-    Q_UNUSED(email);
+    QSqlQuery query(m_db);
+    QString queryString = "SELECT COUNT(*) FROM users WHERE ";
+    QList<QString> conditions;
+
+    if (!username.isEmpty()) {
+        conditions.append("username = :username");
+    }
+    if (!phone.isEmpty()) {
+        conditions.append("phone = :phone");
+    }
+    if (!email.isEmpty()) {
+        conditions.append("email = :email");
+    }
+
+    if (conditions.isEmpty()) {
+        // 如果所有参数都为空，无法进行有效查询
+        logError("No parameters provided for user existence check.", QSqlError());
+        return false;
+    }
+
+    queryString += conditions.join(" OR ");
+    query.prepare(queryString);
+
+    if (!username.isEmpty()) {
+        query.bindValue(":username", username);
+    }
+    if (!phone.isEmpty()) {
+        query.bindValue(":phone", phone);
+    }
+    if (!email.isEmpty()) {
+        query.bindValue(":email", email);
+    }
+
+    if (!query.exec()) {
+        logError("Error checking user existence:", query.lastError());
+        return true; // 假设查询失败时返回 true，以防止重复注册
+    }
+
+    if (query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+
     return false;
 }
 

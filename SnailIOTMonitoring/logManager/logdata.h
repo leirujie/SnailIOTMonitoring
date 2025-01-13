@@ -35,6 +35,7 @@ public:
     };
 
     void loadLogsFromFile();
+    void userLoadLogsFromFile();
 
 private:
     Ui::logdata *ui;

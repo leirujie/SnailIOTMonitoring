@@ -39,6 +39,41 @@ QWidget#RegisterPage {
     border-radius: 10px;
 }
 
+QPushButton#pushButtonMin {
+    background-color: #3498DB; /* 绿色背景 */
+    border: none; /* 无边框 */
+    color: white; /* 白色字体 */
+    padding: 10px 15px; /* 内边距 */
+    border-radius: 5px; /* 圆角 */
+    font-size: 16px; /* 字体大小 */
+}
+
+QPushButton#pushButtonMax {
+    background-color: #3498DB; /* 蓝色背景 */
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+QPushButton#pushButtonClose {
+    background-color: #3498DB; /* 红色背景 */
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+/*QPushButton:hover {
+    opacity: 0.8; /* 鼠标悬停时透明度变化 */
+}*/
+
+/*QPushButton:pressed {
+    background-color: #333; /* 按下时的背景颜色 */
+}*/
+
 /* 按钮样式 */
 QPushButton {
     border: none;

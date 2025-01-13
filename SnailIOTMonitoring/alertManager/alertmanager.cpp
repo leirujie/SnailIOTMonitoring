@@ -1,34 +1,13 @@
 #include "alertmanager.h"
-#include <QPushButton>
-#include <QListView>
-#include <QDateTimeEdit>
-#include <QComboBox>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QMessageBox>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QInputDialog>
-#include <QDialog>
-#include <QLineEdit>
-#include <QFormLayout>
-#include <QDialogButtonBox>
-#include <QLabel>
-#include <QSqlTableModel>
-#include <QSqlQueryModel>
-#include <QDebug>
 
-// 构造函数
 AlertManager::AlertManager(QWidget *parent)
     : QDialog(parent)
 {
-    // 告警规则管理模块
     createRuleButton = new QPushButton("创建规则", this);
     editRuleButton = new QPushButton("编辑规则", this);
     deleteRuleButton = new QPushButton("删除规则", this);
     rulesListView = new QListView(this);
 
-    // 告警记录模块
     QDateTime dateTime = QDateTime::fromString("2025-01-01 00:00:00", "yyyy-MM-dd hh:mm:ss");
     startTimeEdit = new QDateTimeEdit(dateTime, this);
     endTimeEdit = new QDateTimeEdit(dateTime, this);
@@ -38,7 +17,6 @@ AlertManager::AlertManager(QWidget *parent)
     queryAlertButton = new QPushButton("告警查询", this);
     alertRecordView = new QListView(this);
 
-    // 布局
     QVBoxLayout *ruleLayout = new QVBoxLayout;
     QHBoxLayout *ruleButtonLayout = new QHBoxLayout;
     ruleButtonLayout->addWidget(createRuleButton);
@@ -65,20 +43,17 @@ AlertManager::AlertManager(QWidget *parent)
     mainLayout->addLayout(alertLayout);
     setLayout(mainLayout);
 
-    // 信号与槽连接
     connect(createRuleButton, &QPushButton::clicked, this, &AlertManager::onCreateRuleClicked);
     connect(editRuleButton, &QPushButton::clicked, this, &AlertManager::onEditRuleClicked);
     connect(deleteRuleButton, &QPushButton::clicked, this, &AlertManager::onDeleteRuleClicked);
     connect(queryAlertButton, &QPushButton::clicked, this, &AlertManager::onQueryAlertClicked);
 
-    // 数据库初始化
     setupDatabase();
-    setupSensorDatabase(); // 新增：初始化传感器数据数据库
+    setupSensorDatabase();
     loadAlarmRules();
     setupAlertRecordModel();
 }
 
-// 析构函数
 AlertManager::~AlertManager()
 {
     if (db.isOpen())
@@ -153,7 +128,6 @@ bool AlertManager::showRuleDialog(QString &deviceId, QString &description, QStri
     QDialog dialog(this);
     dialog.setWindowTitle("规则编辑");
 
-    // 创建输入框
     QLineEdit *deviceIdEdit = new QLineEdit(&dialog);
     QLineEdit *descriptionEdit = new QLineEdit(&dialog);
     QLineEdit *conditionEdit = new QLineEdit(&dialog);
@@ -165,9 +139,8 @@ bool AlertManager::showRuleDialog(QString &deviceId, QString &description, QStri
     descriptionEdit->setText(description);
     conditionEdit->setText(condition);
     actionEdit->setText(action);
-    deviceTypeComboBox->setCurrentText(deviceType); // 设置设备类型下拉框的默认值
+    deviceTypeComboBox->setCurrentText(deviceType);
 
-    // 使用 QFormLayout 来布局输入框
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("设备类型：", deviceTypeComboBox);
     formLayout->addRow("设备 ID：", deviceIdEdit);
@@ -215,7 +188,6 @@ void AlertManager::onCreateRuleClicked()
         }
         else
         {
-            // 记录日志
             LogManager::instance().logMessage(LogManager::INFO, "operation",
                                               QString("创建规则: 设备ID=%1, 设备类型=%2, 描述=%3, 条件=%4, 动作=%5")
                                                   .arg(deviceId)
@@ -261,7 +233,6 @@ void AlertManager::onEditRuleClicked()
         }
         else
         {
-            // 记录日志
             LogManager::instance().logMessage(LogManager::INFO, "operation",
                                               QString("编辑规则: 规则ID=%1, 设备ID=%2, 设备类型=%3, 描述=%4, 条件=%5, 动作=%6")
                                                   .arg(ruleId)
@@ -298,7 +269,6 @@ void AlertManager::onDeleteRuleClicked()
     }
     else
     {
-        // 记录日志
         LogManager::instance().logMessage(LogManager::INFO, "operation",
                                           QString("删除规则: 规则ID=%1, 设备ID=%2, 设备类型=%3, 描述=%4, 条件=%5, 动作=%6")
                                               .arg(ruleId)
@@ -325,15 +295,12 @@ void AlertManager::setupSensorDatabase()
 
 void AlertManager::onQueryAlertClicked()
 {
-    // 获取时间范围
     QString startTime = startTimeEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
     QString endTime = endTimeEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
 
-    // 获取告警类型
     QString alertType = alertTypeComboBox->currentText();
     qDebug() << "时间范围:" << startTime << "到" << endTime << "，告警类型:" << alertType;
 
-    // 查询告警规则
     QSqlQuery alarmRulesQuery(db);
     alarmRulesQuery.prepare("SELECT device_type, device_id, condition FROM alarm_rules");
 
@@ -343,12 +310,10 @@ void AlertManager::onQueryAlertClicked()
         return;
     }
 
-    // 查询传感器数据
     QString sensorQueryString = R"(
         SELECT device_type, device_id, value, timestamp FROM data WHERE timestamp BETWEEN ? AND ?
     )";
 
-    // 如果告警类型不是“全部”，则添加设备类型过滤条件
     if (alertType != "全部")
     {
         sensorQueryString += " AND device_type = ?";
@@ -362,7 +327,6 @@ void AlertManager::onQueryAlertClicked()
 
     if (alertType != "全部")
     {
-        // 根据设备类型过滤
         sensorQuery.addBindValue(alertType);
     }
 
@@ -372,7 +336,6 @@ void AlertManager::onQueryAlertClicked()
         return;
     }
 
-    // 检查传感器数据结果
     while (sensorQuery.next())
     {
         QString sensorDeviceType = sensorQuery.value("device_type").toString();
@@ -382,7 +345,6 @@ void AlertManager::onQueryAlertClicked()
 
         qDebug() << "传感器数据:" << sensorDeviceType << sensorDeviceId << sensorValue << sensorTimestamp;
 
-        // 遍历告警规则
         alarmRulesQuery.seek(0);
         while (alarmRulesQuery.next())
         {
@@ -392,16 +354,13 @@ void AlertManager::onQueryAlertClicked()
 
             qDebug() << "告警规则:" << ruleDeviceType << ruleDeviceId << condition;
 
-            // 匹配设备类型和 ID
             if (sensorDeviceType == ruleDeviceType && sensorDeviceId == ruleDeviceId)
             {
-                // 解析条件
                 if (condition.startsWith(">"))
                 {
                     double threshold = condition.mid(1).toDouble();
                     qDebug() << "阈值:" << threshold;
 
-                    // 检查是否触发告警
                     if (sensorValue > threshold)
                     {
                         qDebug() << "触发告警";
@@ -411,7 +370,6 @@ void AlertManager::onQueryAlertClicked()
                                               .arg(threshold)
                                               .arg(sensorTimestamp);
 
-                        // 检查是否已存在相同的告警记录
                         QSqlQuery checkQuery(db);
                         checkQuery.prepare(R"(
                             SELECT COUNT(*) FROM alert_records
@@ -427,11 +385,10 @@ void AlertManager::onQueryAlertClicked()
                             if (count > 0)
                             {
                                 qDebug() << "告警记录已存在，跳过插入";
-                                continue; // 跳过插入
+                                continue;
                             }
                         }
 
-                        // 插入告警记录
                         QSqlQuery insertQuery(db);
                         insertQuery.prepare(R"(
                             INSERT INTO alert_records (device_id, timestamp, content, status, note) VALUES (?, ?, ?, ?, ?)
@@ -448,7 +405,6 @@ void AlertManager::onQueryAlertClicked()
                         }
                         else
                         {
-                            // 记录告警日志
                             LogManager::instance().logMessage(LogManager::WARNING, "alarm",
                                                              QString("告警触发: 设备类型=%1, 设备ID=%2, 值=%3, 阈值=%4, 时间=%5")
                                                                  .arg(sensorDeviceType)
@@ -463,13 +419,11 @@ void AlertManager::onQueryAlertClicked()
         }
     }
 
-    // 更新告警记录视图
     QSqlQuery alertRecordQuery(db);
     QString queryString = R"(
         SELECT * FROM alert_records WHERE timestamp BETWEEN ? AND ?
     )";
 
-    // 如果告警类型不是“全部”，则添加设备类型过滤条件
     if (alertType != "全部")
     {
         queryString += " AND content LIKE ?";
@@ -481,7 +435,6 @@ void AlertManager::onQueryAlertClicked()
 
     if (alertType != "全部")
     {
-        // 根据设备类型过滤
         alertRecordQuery.addBindValue("%" + alertType + "%");
     }
 
@@ -491,17 +444,14 @@ void AlertManager::onQueryAlertClicked()
         return;
     }
 
-    // 检查告警记录结果
     int recordCount = 0;
     while (alertRecordQuery.next())
     {
         recordCount++;
-        // 打印每一条记录的信息
         qDebug() << "告警记录:" << alertRecordQuery.value("device_id").toString() << alertRecordQuery.value("timestamp").toString() << alertRecordQuery.value("content").toString();
     }
     qDebug() << "查询到的告警记录数量:" << recordCount;
 
-    // 更新视图显示
     QSqlQueryModel *customAlertRecordModel = new QSqlQueryModel(this);
     customAlertRecordModel->setQuery(alertRecordQuery);
     alertRecordView->setModel(customAlertRecordModel);

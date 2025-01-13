@@ -182,7 +182,5 @@ void RealTimeData::generateChart() {
     QChartView *chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
-//    chartView->setFixedSize(800, 500);
-
     chartView->show();
 }

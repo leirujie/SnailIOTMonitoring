@@ -56,7 +56,7 @@ AdminDeviceManager::AdminDeviceManager(QWidget *parent) :
                           query.exec("INSERT OR IGNORE INTO groups (name, type) VALUES ('北京', '设备位置');");
 
                // 加载分组数据
-                   loadGroups();
+               loadGroups();
                // 信号与槽
                connect(ui->addButton, &QPushButton::clicked, this, &AdminDeviceManager::onAddDevice);
                connect(ui->editButton, &QPushButton::clicked, this, &AdminDeviceManager::onEditDevice);
@@ -119,7 +119,7 @@ void AdminDeviceManager::onAddDevice()
         // 检查设备信息是否合法
         if (isDeviceInfoValid(deviceInfo))
         {
-            saveDeviceToDatabase(deviceInfo);  // 保存设备信息       
+            saveDeviceToDatabase(deviceInfo);  // 保存设备信息
             loadDevices("全部", "全部");  // 刷新设备列表
         }
         else
@@ -306,59 +306,71 @@ void AdminDeviceManager::onAddDeviceLocationGroup()
            }
        }
 }
+
 void AdminDeviceManager::addGroupToDatabase(const QString &groupName, const QString &type)
 {
-    if (!db.isOpen()) {
-        QMessageBox::critical(this, "数据库错误", "数据库未成功打开！");
-        return;
-    }
     // 检查表结构，确保有 `type` 列，如果没有则添加
-        QSqlQuery checkQuery;
-        checkQuery.exec("PRAGMA table_info(groups)");  // 查询表结构
+    QSqlQuery checkQuery;
+    checkQuery.exec("PRAGMA table_info(groups)");  // 查询表结构
 
-        bool hasTypeColumn = false;
-        while (checkQuery.next()) {
-            QString columnName = checkQuery.value("name").toString();
-            if (columnName == "type") {
-                hasTypeColumn = true;  // 如果已有 `type` 列，标记为 true
-                break;
-            }
+    bool hasTypeColumn = false;
+    while (checkQuery.next())
+    {
+        QString columnName = checkQuery.value("name").toString();
+        if (columnName == "type")
+        {
+            hasTypeColumn = true;  // 如果已有 `type` 列，标记为 true
+            break;
         }
+    }
 
-        // 如果没有 `type` 列，则添加该列
-        if (!hasTypeColumn) {
-            QSqlQuery alterQuery;
-            alterQuery.exec("ALTER TABLE groups ADD COLUMN type TEXT");  // 添加 `type` 列
-            qDebug() << "Added 'type' column to groups table";
+    // 如果没有 `type` 列，则添加该列
+    if (!hasTypeColumn)
+    {
+        QSqlQuery alterQuery;
+        alterQuery.prepare("ALTER TABLE groups ADD COLUMN type TEXT");  // 添加 `type` 列
+        if (!alterQuery.exec())
+        {
+            QMessageBox::critical(this, "数据库错误", "添加分组类型列失败：" + alterQuery.lastError().text());
+            qDebug() << "Failed to add 'type' column: " << alterQuery.lastError().text();  // 打印错误信息
+            return;
         }
+        qDebug() << "Added 'type' column to groups table";
+    }
 
-        QSqlQuery query;
-        // 准备插入 SQL 语句
-        query.prepare("INSERT INTO groups (name, type) VALUES (:name, :type)");
+    QSqlQuery query;
+    // 准备插入 SQL 语句
+    query.prepare("INSERT INTO groups (name, type) VALUES (:name, :type)");
 
-        // 打印出准备执行的 SQL 语句
-        qDebug() << "Prepared Query:" << query.executedQuery();
+    // 打印出准备执行的 SQL 语句
+    qDebug() << "Prepared Query:" << query.executedQuery();
 
-        // 绑定参数
-        query.bindValue(":name", groupName);
-        query.bindValue(":type", type);
+    // 绑定参数
+    query.bindValue(":name", groupName);
+    query.bindValue(":type", type);
 
-        // 调试：打印绑定的参数
-        qDebug() << "Group Name: " << groupName;
-        qDebug() << "Type: " << type;
+    // 调试：打印绑定的参数
+    qDebug() << "Group Name: " << groupName;
+    qDebug() << "Type: " << type;
 
-        // 执行查询并检查是否成功
-        if (!query.exec()) {
-            // 打印出错误信息
-            QMessageBox::critical(this, "数据库错误", "添加分组失败：" + query.lastError().text());
-            qDebug() << "Query execution failed: " << query.lastError().text();  // 打印错误信息
-        } else {
-            QMessageBox::information(this, "成功", "分组添加成功！");
-            LogManager::instance().logMessage(LogManager::INFO, "operation",
-                QString("管理员添加了分组：%1（类型：%2）").arg(groupName).arg(type));
-            loadGroups();  // 重新加载分组列表
-        }
+    // 执行查询并检查是否成功
+    if (!query.exec())
+    {
+        // 打印出错误信息
+        QMessageBox::critical(this, "数据库错误", "添加分组失败：" + query.lastError().text());
+        qDebug() << "Query execution failed: " << query.lastError().text();  // 打印错误信息
+    }
+    else
+    {
+        QMessageBox::information(this, "成功", "分组添加成功！");
+
+        LogManager::instance().logMessage(LogManager::INFO, "operation",
+            QString("管理员添加了分组：%1（类型：%2）").arg(groupName).arg(type));
+
+        loadGroups();  // 重新加载分组列表
+    }
 }
+
 
 void AdminDeviceManager::onDeleteGroup()
 {

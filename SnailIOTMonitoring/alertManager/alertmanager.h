@@ -4,9 +4,25 @@
 #include <QDialog>
 #include <QWidget>
 #include <QSqlDatabase>
-#include <QSqlTableModel>
 #include <QDateTimeEdit>
 #include <QComboBox>
+#include <QPushButton>
+#include <QListView>
+#include <QDateTimeEdit>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QMessageBox>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QInputDialog>
+#include <QDialog>
+#include <QLineEdit>
+#include <QFormLayout>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QSqlTableModel>
+#include <QSqlQueryModel>
+#include <QDebug>
 #include "logManager/logdata.h"
 #include "logManager/logmanager.h"
 
@@ -24,15 +40,26 @@ class AlertManager : public QDialog
 public:
     explicit AlertManager(QWidget *parent = nullptr);
     ~AlertManager();
+
+private slots:
+    void onCreateRuleClicked();
+    void onEditRuleClicked();
+    void onDeleteRuleClicked();
+    void onQueryAlertClicked();
+    void setupDatabase();
+    void loadAlarmRules();
+    void setupAlertRecordModel();
+    void setupSensorDatabase();
+    bool showRuleDialog(QString &deviceId, QString &description, QString &condition, QString &action, QString &deviceType);
+
 private:
-    // 告警规则管理模块
+    Ui::AlertManager *ui;
     QPushButton *createRuleButton;
     QPushButton *editRuleButton;
     QPushButton *deleteRuleButton;
     QListView *rulesListView;
     QSqlDatabase sensorDb;
 
-    // 告警记录模块
     QDateTimeEdit *startTimeEdit;
     QDateTimeEdit *endTimeEdit;
     QComboBox *alertTypeComboBox;
@@ -40,32 +67,9 @@ private:
     QPushButton *queryAlertButton;
     QListView *alertRecordView;
 
-    // 数据库
     QSqlDatabase db;
     QSqlTableModel *rulesModel;
     QSqlTableModel *alertRecordModel;
-
-    // 初始化
-    void setupDatabase();
-    void loadAlarmRules();
-    void setupAlertRecordModel();
-    void setupSensorDatabase();
-
-    // 弹窗输入规则数据
-    bool showRuleDialog(QString &deviceId, QString &description, QString &condition, QString &action, QString &deviceType);
-
-private slots:
-    // 告警规则模块的槽函数
-    void onCreateRuleClicked();
-    void onEditRuleClicked();
-    void onDeleteRuleClicked();
-
-    // 告警记录查询的槽函数
-    void onQueryAlertClicked();
-//    void loadAlertRecords();
-
-private:
-    Ui::AlertManager *ui;
 };
 
 #endif // ALERTMANAGER_H

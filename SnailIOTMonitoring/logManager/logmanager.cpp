@@ -1,17 +1,9 @@
 #include "logmanager.h"
-#include <QFile>
-#include <QTextStream>
-#include <QSqlQuery>
-#include <QMessageBox>
-#include <QRegularExpression>
-#include <QDebug>
-#include <QDir>
 
 LogManager::LogManager(QObject *parent)
     : QObject(parent)
     ,currentLogLevel(INFO) {
 
-    // 创建数据库连接
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("SnailIOTMonitor.db");
 
@@ -20,7 +12,6 @@ LogManager::LogManager(QObject *parent)
         return;
     }
 
-    // 创建日志表
     QSqlQuery query;
     query.exec("CREATE TABLE IF NOT EXISTS system_logs ("
                 "log_id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -68,26 +59,21 @@ void LogManager::logMessage(LogLevel level, const QString &logType, const QStrin
         return;
     }
 
-    // 获取当前时间
     QString logTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    // 将日志等级转换为字符串
     QString logLevelStr = logLevelToString(level);
-    // 格式化日志条目：时间 日志等级 日志类型 日志内容
     QString logEntry = QString("[%1] [%2] [%3] %4")
                            .arg(logTime)
                            .arg(logLevelStr)
-                           .arg(logType)  // 添加日志类型
+                           .arg(logType)
                            .arg(message);
 
-    // 写入日志文件
     logStream << logEntry << Qt::endl;
     logStream.flush();
 
-    // 写入数据库
     QSqlQuery query;
     query.prepare("INSERT INTO system_logs (timestamp, log_type, log_level, content) VALUES (?, ?, ?, ?)");
     query.addBindValue(logTime);
-    query.addBindValue(logType);  // 使用传入的日志类型
+    query.addBindValue(logType);
     query.addBindValue(logLevelStr);
     query.addBindValue(message);
 
@@ -95,7 +81,6 @@ void LogManager::logMessage(LogLevel level, const QString &logType, const QStrin
         qDebug() << "Failed to insert log into database:" << query.lastError();
     }
 
-    // 发出信号给界面
     LogEntry entry = {logLevelStr, logTime, logType, message};
     emit logAdded(entry);
 }

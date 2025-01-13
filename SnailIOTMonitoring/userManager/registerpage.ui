@@ -49,6 +49,11 @@
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
               <widget class="QLabel" name="regisUser_label">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>用户名：</string>
                </property>
@@ -56,6 +61,11 @@
              </item>
              <item>
               <widget class="QLabel" name="label_3">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>邮箱地址：</string>
                </property>
@@ -63,6 +73,11 @@
              </item>
              <item>
               <widget class="QLabel" name="label">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>手机号：</string>
                </property>
@@ -70,6 +85,11 @@
              </item>
              <item>
               <widget class="QLabel" name="regisPwd_label">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>密码：</string>
                </property>
@@ -77,6 +97,11 @@
              </item>
              <item>
               <widget class="QLabel" name="label_2">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>确认密码：</string>
                </property>
@@ -84,6 +109,11 @@
              </item>
              <item>
               <widget class="QLabel" name="label_5">
+               <property name="font">
+                <font>
+                 <family>Agency FB</family>
+                </font>
+               </property>
                <property name="text">
                 <string>昵称：</string>
                </property>
